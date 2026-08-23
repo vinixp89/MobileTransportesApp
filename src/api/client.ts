@@ -5,6 +5,10 @@ import { apagarToken, lerToken } from './tokenStorage'
 // disponível no bundle (Expo injeta automaticamente qualquer EXPO_PUBLIC_ do .env).
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
+  // Sem isso, uma rede que trava silenciosamente (ex: firewall derrubando o pacote sem responder)
+  // deixa a requisição pendurada pra sempre, sem nunca cair no catch — o app fica girando o
+  // spinner eternamente sem nenhuma mensagem de erro.
+  timeout: 15000,
 })
 
 // Anexa o token JWT salvo no login em toda requisição, automaticamente — mesmo padrão do
@@ -35,6 +39,10 @@ api.interceptors.response.use(
 // Tenta extrair uma mensagem de erro legível das respostas da API (formato { mensagem: "..." },
 // lista de erros do Identity, ou erro genérico de validação do ASP.NET) — mesma lógica do web.
 export function extrairMensagemErro(error: unknown): string {
+  if ((error as { code?: string })?.code === 'ECONNABORTED') {
+    return 'A API demorou demais pra responder (timeout de 15s). Confira se o celular e o computador estão na mesma rede e se o firewall libera a porta da API.'
+  }
+
   const data = (error as { response?: { data?: unknown } })?.response?.data as
     | { mensagem?: string; errors?: Record<string, string[]> }
     | string
