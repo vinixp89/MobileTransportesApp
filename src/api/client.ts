@@ -3,6 +3,10 @@ import { apagarToken, lerToken } from './tokenStorage'
 
 // Aponta pra API .NET (ver README) — em variável de ambiente EXPO_PUBLIC_* pra ficar
 // disponível no bundle (Expo injeta automaticamente qualquer EXPO_PUBLIC_ do .env).
+// Log só pra debug do setup local — mostra no terminal do `expo start` assim que o app abre,
+// pra confirmar se o EXPO_PUBLIC_API_URL do .env realmente chegou no bundle.
+console.log('[api] EXPO_PUBLIC_API_URL =', process.env.EXPO_PUBLIC_API_URL)
+
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
   // Sem isso, uma rede que trava silenciosamente (ex: firewall derrubando o pacote sem responder)
@@ -28,6 +32,15 @@ api.interceptors.request.use(async (config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Log só pra debug do setup local — ajuda a diferenciar timeout de erro de conexão de
+    // resposta de erro da API sem precisar abrir o debugger do Expo.
+    console.log('[api] erro na requisição:', {
+      code: error.code,
+      message: error.message,
+      status: error.response?.status,
+      url: error.config?.baseURL ? `${error.config.baseURL}${error.config?.url}` : error.config?.url,
+    })
+
     if (error.response?.status === 401) {
       await apagarToken()
     }
