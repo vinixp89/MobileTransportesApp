@@ -51,6 +51,34 @@ Também dá pra rodar no navegador com `npm run web`, útil pra iterar rápido n
 APIs nativas, como o armazenamento seguro do token, não funcionam 100% no navegador — só no
 celular/emulador de verdade).
 
+### Testando num celular físico via Wi-Fi: o Expo Go não funciona com API em HTTP
+
+O **Expo Go** (app pronto da Play Store) bloqueia chamadas HTTP sem criptografia — funciona só
+com APIs em HTTPS. Como a API .NET local roda em HTTP simples, o app trava/dá erro de rede ao
+tentar falar com ela pelo Expo Go, mesmo com a rede e o firewall configurados certinho.
+
+A solução é gerar um **development build** — uma versão personalizada do app (não é a versão
+final pra loja, só pra desenvolvimento) que já vem com a permissão de HTTP habilitada. Não
+precisa de Android Studio: o build roda na nuvem, pelo **EAS** (serviço da própria Expo, tem
+plano gratuito).
+
+1. Crie uma conta grátis em https://expo.dev (se ainda não tiver)
+2. Instale a CLI do EAS: `npm install -g eas-cli`
+3. Faça login: `eas login`
+4. Gere o build de desenvolvimento (demora uns 10-15 min na nuvem):
+   ```bash
+   eas build --profile development --platform android
+   ```
+   Na primeira vez ele pergunta sobre gerar um keystore Android — pode deixar o EAS gerenciar
+   automaticamente.
+5. Quando terminar, baixe e instale o `.apk` gerado no celular (o terminal mostra um link e um
+   QR code pra baixar direto).
+6. Suba o servidor com `npm run start:dev-client` (em vez do `npm run start` normal) e abra o
+   app instalado no celular — ele se conecta ao Metro do mesmo jeito que o Expo Go.
+
+Depois disso, pode voltar a usar a URL da rede local normalmente no `.env` (`http://SEU_IP:PORTA/api`),
+sem precisar de cabo USB nem `adb reverse`.
+
 ## Estrutura
 
 ```
