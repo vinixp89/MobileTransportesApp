@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Vai na Boa",
+    "slug": "vai-na-boa-cliente",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#f0fdf4",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vainaboa.cliente"
+    },
+    "android": {
+      "package": "com.vainaboa.cliente",
+      "adaptiveIcon": {
+        "backgroundColor": "#16a34a",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
