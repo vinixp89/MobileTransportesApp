@@ -7,6 +7,17 @@ import { apagarToken, lerToken } from './tokenStorage'
 // pra confirmar se o EXPO_PUBLIC_API_URL do .env realmente chegou no bundle.
 console.log('[api] EXPO_PUBLIC_API_URL =', process.env.EXPO_PUBLIC_API_URL)
 
+// Teste de diagnóstico temporário: um GET simples (sem corpo, sem auth) direto na raiz da API,
+// usando o fetch nativo (não o axios) — serve pra descobrir se É POST/JSON especificamente que
+// falha, ou se é QUALQUER requisição feita de dentro do app (nesse caso o problema seria mais
+// geral do que só o login).
+const origemApi = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/api\/?$/, '')
+if (origemApi) {
+  fetch(`${origemApi}/swagger/v1/swagger.json`)
+    .then((r) => console.log('[api] teste GET (fetch) OK, status:', r.status))
+    .catch((e) => console.log('[api] teste GET (fetch) FALHOU:', e.message))
+}
+
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
   // Sem isso, uma rede que trava silenciosamente (ex: firewall derrubando o pacote sem responder)
