@@ -17,6 +17,12 @@ function useTesteDeConexao() {
       .then((r) => Alert.alert('Teste INTERNET (example.com)', `OK! status ${r.status}`))
       .catch((e) => Alert.alert('Teste INTERNET (example.com)', `FALHOU: ${e?.message ?? String(e)}`))
 
+    // Mesmo site, mas em HTTP puro (sem "s") — separa se o problema é cleartext em geral ou
+    // especificamente endereço de rede local (IP tipo 192.168.x.x).
+    fetch('http://example.com')
+      .then((r) => Alert.alert('Teste HTTP puro (example.com)', `OK! status ${r.status}`))
+      .catch((e) => Alert.alert('Teste HTTP puro (example.com)', `FALHOU: ${e?.message ?? String(e)}`))
+
     fetch(`${origemApi}/swagger/v1/swagger.json`)
       .then((r) => Alert.alert('Teste API LOCAL', `OK! status ${r.status}`))
       .catch((e) => Alert.alert('Teste API LOCAL', `FALHOU: ${e?.message ?? String(e)}`))
