@@ -5,27 +5,19 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { AuthProvider } from './src/context/AuthContext'
 import RootNavigator from './src/navigation/RootNavigator'
+import { pedirPermissaoRedeLocal } from './src/api/permissaoRedeLocal'
 
-// Teste de diagnóstico temporário: compara acesso à internet normal (site externo, HTTPS) com
-// acesso à API local (rede Wi-Fi, HTTP) — descobre se o problema é geral (app sem internet
-// nenhuma) ou específico de acessar IPs da rede local.
+// Teste de diagnóstico temporário: confirma que, depois de pedir a permissão de rede local
+// (NEARBY_WIFI_DEVICES, ver permissaoRedeLocal.ts), a API local passa a responder.
 function useTesteDeConexao() {
   useEffect(() => {
     const origemApi = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/api\/?$/, '')
 
-    fetch('https://example.com')
-      .then((r) => Alert.alert('Teste INTERNET (example.com)', `OK! status ${r.status}`))
-      .catch((e) => Alert.alert('Teste INTERNET (example.com)', `FALHOU: ${e?.message ?? String(e)}`))
-
-    // Mesmo site, mas em HTTP puro (sem "s") — separa se o problema é cleartext em geral ou
-    // especificamente endereço de rede local (IP tipo 192.168.x.x).
-    fetch('http://example.com')
-      .then((r) => Alert.alert('Teste HTTP puro (example.com)', `OK! status ${r.status}`))
-      .catch((e) => Alert.alert('Teste HTTP puro (example.com)', `FALHOU: ${e?.message ?? String(e)}`))
-
-    fetch(`${origemApi}/swagger/v1/swagger.json`)
-      .then((r) => Alert.alert('Teste API LOCAL', `OK! status ${r.status}`))
-      .catch((e) => Alert.alert('Teste API LOCAL', `FALHOU: ${e?.message ?? String(e)}`))
+    pedirPermissaoRedeLocal().finally(() => {
+      fetch(`${origemApi}/swagger/v1/swagger.json`)
+        .then((r) => Alert.alert('Teste API LOCAL', `OK! status ${r.status}`))
+        .catch((e) => Alert.alert('Teste API LOCAL', `FALHOU: ${e?.message ?? String(e)}`))
+    })
   }, [])
 }
 
