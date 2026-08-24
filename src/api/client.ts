@@ -13,6 +13,11 @@ const api = axios.create({
   // deixa a requisição pendurada pra sempre, sem nunca cair no catch — o app fica girando o
   // spinner eternamente sem nenhuma mensagem de erro.
   timeout: 15000,
+  headers: {
+    // Sem esse header, o túnel gratuito do ngrok intercepta a primeira requisição de um
+    // visitante novo com uma página de aviso HTML em vez de deixar passar pra API de verdade.
+    'ngrok-skip-browser-warning': 'true',
+  },
 })
 
 // Anexa o token JWT salvo no login em toda requisição, automaticamente — mesmo padrão do
