@@ -4,23 +4,12 @@ import { useAuth } from '../context/AuthContext'
 import { cores } from '../theme/colors'
 import LoginScreen from '../screens/LoginScreen'
 import HomeScreen from '../screens/HomeScreen'
-import { criarTelaEmConstrucao } from '../screens/EmConstrucaoScreen'
+import PedirCorridaScreen from '../screens/PedirCorridaScreen'
+import PacotesScreen from '../screens/PacotesScreen'
+import PlanosScreen from '../screens/PlanosScreen'
 import type { RootStackParamList } from './types'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
-
-const PedirCorridaScreen = criarTelaEmConstrucao(
-  '🚗',
-  'Pedir corrida ainda vai ganhar mapa, endereço e estimativa de valor por aqui.'
-)
-const PacotesScreen = criarTelaEmConstrucao(
-  '🎟️',
-  'Catálogo de pacotes de corrida ainda vai ganhar essa tela.'
-)
-const PlanosScreen = criarTelaEmConstrucao(
-  '⭐',
-  'Assinatura de planos ainda vai ganhar essa tela.'
-)
 
 export default function RootNavigator() {
   const { usuario, verificandoSessao } = useAuth()
