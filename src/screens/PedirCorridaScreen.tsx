@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +13,7 @@ import EnderecoFields, { enderecoVazio, type Endereco } from '../components/Ende
 import RideConfirmCard, { type Estimativa } from '../components/RideConfirmCard'
 import { obterFaixa, formatarPreco } from '../constants/faixas'
 import { cores } from '../theme/colors'
+import type { RootStackParamList } from '../navigation/types'
 
 const TIPO_CONSUMO = { AVULSA: 0, PACOTE: 1, BENEFICIO: 2 } as const
 
@@ -24,8 +26,12 @@ type Beneficio = {
 }
 type Carteira = { saldo: number }
 
-export default function PedirCorridaScreen() {
-  const [etapa, setEtapa] = useState<'form' | 'confirmando' | 'confirmado'>('form')
+type Props = NativeStackScreenProps<RootStackParamList, 'PedirCorrida'>
+
+export default function PedirCorridaScreen({ navigation }: Props) {
+  // 'form' -> preenchendo endereços | 'confirmando' -> revisando estimativa
+  // (ao confirmar, navega pra AcompanharCorrida em vez de ficar numa 3ª etapa aqui)
+  const [etapa, setEtapa] = useState<'form' | 'confirmando'>('form')
 
   const [origem, setOrigem] = useState<Endereco>(enderecoVazio)
   const [destino, setDestino] = useState<Endereco>(enderecoVazio)
@@ -116,35 +122,20 @@ export default function PedirCorridaScreen() {
     setConfirmando(true)
 
     try {
-      await api.post('/Corridas', {
+      const { data } = await api.post('/Corridas', {
         origem,
         destino,
         tipoConsumo,
         pacoteCorridasId: tipoConsumo === TIPO_CONSUMO.PACOTE ? pacoteCorridasId : null,
       })
 
-      setEtapa('confirmado')
-
-      api.get('/Planos/beneficio').then(({ data }) => setBeneficio(data)).catch(() => {})
-
-      if (tipoConsumo === TIPO_CONSUMO.AVULSA) {
-        api.get('/Carteiras/minha-carteira').then(({ data }) => setCarteira(data)).catch(() => {})
-      }
+      // Daqui pra frente quem cuida do status da corrida (motorista aceitar, se deslocar até o
+      // cliente, etc) é a tela de acompanhamento — ela já faz o polling sozinha.
+      navigation.replace('AcompanharCorrida', { corridaId: data.id })
     } catch (error) {
       setErro(extrairMensagemErro(error))
-    } finally {
       setConfirmando(false)
     }
-  }
-
-  function handleNovaCorrida() {
-    setEtapa('form')
-    setOrigem(enderecoVazio)
-    setDestino(enderecoVazio)
-    setTipoConsumo(TIPO_CONSUMO.AVULSA)
-    setPacoteCorridasId('')
-    setEstimativa(null)
-    setErro('')
   }
 
   return (
@@ -221,7 +212,7 @@ export default function PedirCorridaScreen() {
         </View>
       )}
 
-      {(etapa === 'confirmando' || etapa === 'confirmado') && estimativa && (
+      {etapa === 'confirmando' && estimativa && (
         <RideConfirmCard
           estimativa={estimativa}
           modo={etapa}
@@ -232,12 +223,6 @@ export default function PedirCorridaScreen() {
           bloqueado={Boolean(erroFaixaPacote || erroFaixaBeneficio || erroSaldoAvulsa)}
           gratisPlano={tipoConsumo === TIPO_CONSUMO.BENEFICIO}
         />
-      )}
-
-      {etapa === 'confirmado' && (
-        <Pressable onPress={handleNovaCorrida} style={styles.botaoSecundario}>
-          <Text style={styles.botaoSecundarioTexto}>Pedir outra corrida</Text>
-        </Pressable>
       )}
     </ScrollView>
   )

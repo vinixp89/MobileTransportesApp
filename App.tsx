@@ -5,10 +5,12 @@ import { StatusBar } from 'expo-status-bar'
 import { AuthProvider } from './src/context/AuthContext'
 import RootNavigator from './src/navigation/RootNavigator'
 import { pedirPermissaoRedeLocal } from './src/api/permissaoRedeLocal'
+import { configurarNotificacoes } from './src/notifications/config'
 
 export default function App() {
   useEffect(() => {
     pedirPermissaoRedeLocal()
+    configurarNotificacoes()
   }, [])
 
   return (

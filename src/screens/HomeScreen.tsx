@@ -1,15 +1,50 @@
+import { useCallback, useState } from 'react'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useFocusEffect } from '@react-navigation/native'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useAuth } from '../context/AuthContext'
+import api from '../api/client'
+import { obterStatusLabel, STATUS_ATIVOS } from '../constants/statusCorrida'
 import { cores } from '../theme/colors'
 import type { RootStackParamList } from '../navigation/types'
+import type { Corrida } from '../types/corrida'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
+const INTERVALO_MS = 15000
+
 // Espelha os cards de ação da HomePage do front-end web (Cliente): Pedir corrida, Pacote de
-// corrida e Planos, no mesmo verde de marca.
+// corrida e Planos, no mesmo verde de marca. Também mostra um banner de "corrida em andamento"
+// quando o cliente tem alguma pendente/confirmada/em andamento — pra ele não perder o fio da
+// corrida se sair do app e voltar depois.
 export default function HomeScreen({ navigation }: Props) {
   const { usuario, logout } = useAuth()
+  const [corridaAtual, setCorridaAtual] = useState<Corrida | null>(null)
+
+  useFocusEffect(
+    useCallback(() => {
+      let ativo = true
+
+      function buscar() {
+        api
+          .get<Corrida | null>('/Corridas/atual')
+          .then(({ data }) => {
+            if (ativo) setCorridaAtual(data && STATUS_ATIVOS.includes(data.status) ? data : null)
+          })
+          .catch(() => {
+            // Falha isolada não derruba a Home — só não mostra o banner dessa vez.
+          })
+      }
+
+      buscar()
+      const intervalo = setInterval(buscar, INTERVALO_MS)
+
+      return () => {
+        ativo = false
+        clearInterval(intervalo)
+      }
+    }, [])
+  )
 
   return (
     <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo}>
@@ -25,6 +60,21 @@ export default function HomeScreen({ navigation }: Props) {
           <Text style={styles.sair}>Sair</Text>
         </Pressable>
       </View>
+
+      {corridaAtual && (
+        <Pressable
+          onPress={() => navigation.navigate('AcompanharCorrida', { corridaId: corridaAtual.id })}
+          style={({ pressed }) => [styles.banner, pressed && styles.cardPressionado]}
+        >
+          <View style={styles.bannerPulso} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.bannerTitulo}>Corrida em andamento</Text>
+            <Text style={styles.bannerTexto}>
+              {obterStatusLabel(corridaAtual.status).texto} — toque pra acompanhar
+            </Text>
+          </View>
+        </Pressable>
+      )}
 
       <Pressable
         onPress={() => navigation.navigate('PedirCorrida')}
@@ -48,6 +98,14 @@ export default function HomeScreen({ navigation }: Props) {
       >
         <Text style={styles.cardTitulo}>Planos</Text>
         <Text style={styles.cardTexto}>Assine um plano e ganhe desconto e prioridade nas corridas.</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() => navigation.navigate('Historico')}
+        style={({ pressed }) => [styles.cardClaro, pressed && styles.cardPressionado]}
+      >
+        <Text style={styles.cardClaroTitulo}>Histórico de corridas</Text>
+        <Text style={styles.cardClaroTexto}>Veja suas corridas anteriores.</Text>
       </Pressable>
     </ScrollView>
   )
@@ -105,5 +163,51 @@ const styles = StyleSheet.create({
   cardTexto: {
     fontSize: 13,
     color: 'rgba(255,255,255,0.9)',
+  },
+  cardClaro: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    backgroundColor: cores.cartao,
+    borderWidth: 1,
+    borderColor: cores.borda,
+  },
+  cardClaroTitulo: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: cores.texto,
+    marginBottom: 4,
+  },
+  cardClaroTexto: {
+    fontSize: 13,
+    color: cores.textoSecundario,
+  },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#faf5ff',
+    borderWidth: 1,
+    borderColor: '#e9d5ff',
+  },
+  bannerPulso: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#9333ea',
+  },
+  bannerTitulo: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#6b21a8',
+  },
+  bannerTexto: {
+    fontSize: 12,
+    color: '#7e22ce',
+    marginTop: 2,
   },
 })
