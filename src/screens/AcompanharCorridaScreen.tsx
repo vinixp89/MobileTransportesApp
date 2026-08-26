@@ -3,6 +3,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import api, { extrairMensagemErro } from '../api/client'
 import RideMap from '../components/RideMap'
+import NavegacaoFlutuante from '../components/NavegacaoFlutuante'
 import { obterFaixa, formatarPreco } from '../constants/faixas'
 import { obterStatusLabel, STATUS_CONFIRMADA, STATUS_FINALIZADA, STATUS_CANCELADA } from '../constants/statusCorrida'
 import { notificarMudancaDeStatus } from '../notifications/notificar'
@@ -181,6 +182,13 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
             </Text>
           </View>
         )}
+
+        {STATUS_COM_MOTORISTA.includes(corrida.status) ? (
+          <NavegacaoFlutuante
+            destino={{ latitude: corrida.destino.latitude, longitude: corrida.destino.longitude }}
+            corHex={faixa.hex}
+          />
+        ) : null}
 
         {erro ? (
           <View style={styles.erroCaixa}>
