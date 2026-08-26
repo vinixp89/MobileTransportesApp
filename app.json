@@ -9,7 +9,10 @@
     "backgroundColor": "#f0fdf4",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vainaboa.cliente"
+      "bundleIdentifier": "com.vainaboa.cliente",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Usamos sua localização pra preencher o endereço de origem automaticamente ao pedir uma corrida."
+      }
     },
     "android": {
       "package": "com.vainaboa.cliente",
@@ -32,6 +35,12 @@
           "android": {
             "usesCleartextTraffic": true
           }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Usamos sua localização pra preencher o endereço de origem automaticamente ao pedir uma corrida."
         }
       ]
     ],

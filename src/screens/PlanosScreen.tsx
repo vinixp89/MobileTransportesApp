@@ -4,13 +4,16 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import api, { extrairMensagemErro } from '../api/client'
 import { formatarPreco, obterFaixa } from '../constants/faixas'
 import { obterEstiloPlano, STATUS_ASSINATURA } from '../constants/planos'
-import { cores } from '../theme/colors'
+import { useTema } from '../context/ThemeContext'
+import type { Cores } from '../theme/colors'
 
 type Plano = { tipo: number; nome: string; precoMensal: number; beneficios: string[] }
 type Assinatura = { tipo: number; status: number }
 type Beneficio = { temBeneficio: boolean; corBeneficio: number; disponivelParaUso: boolean; jaUsadoNoMes: boolean }
 
 export default function PlanosScreen() {
+  const { cores } = useTema()
+  const styles = criarEstilos(cores)
   const [catalogo, setCatalogo] = useState<Plano[]>([])
   const [assinaturaAtual, setAssinaturaAtual] = useState<Assinatura | null>(null)
   const [beneficio, setBeneficio] = useState<Beneficio | null>(null)
@@ -185,7 +188,8 @@ export default function PlanosScreen() {
   )
 }
 
-const styles = StyleSheet.create({
+function criarEstilos(cores: Cores) {
+  return StyleSheet.create({
   tela: {
     flex: 1,
     backgroundColor: cores.fundo,
@@ -310,4 +314,5 @@ const styles = StyleSheet.create({
   desabilitado: {
     opacity: 0.6,
   },
-})
+  })
+}

@@ -1,7 +1,8 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { ActivityIndicator, View } from 'react-native'
 import { useAuth } from '../context/AuthContext'
-import { cores } from '../theme/colors'
+import { useTema } from '../context/ThemeContext'
+import ThemeToggleButton from '../components/ThemeToggleButton'
 import LoginScreen from '../screens/LoginScreen'
 import HomeScreen from '../screens/HomeScreen'
 import PedirCorridaScreen from '../screens/PedirCorridaScreen'
@@ -9,12 +10,15 @@ import AcompanharCorridaScreen from '../screens/AcompanharCorridaScreen'
 import HistoricoScreen from '../screens/HistoricoScreen'
 import PacotesScreen from '../screens/PacotesScreen'
 import PlanosScreen from '../screens/PlanosScreen'
+import SaldoCorridaScreen from '../screens/SaldoCorridaScreen'
+import CarteiraScreen from '../screens/CarteiraScreen'
 import type { RootStackParamList } from './types'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 export default function RootNavigator() {
   const { usuario, verificandoSessao } = useAuth()
+  const { cores } = useTema()
 
   if (verificandoSessao) {
     return (
@@ -25,7 +29,15 @@ export default function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerTintColor: cores.primaria }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerTintColor: cores.primaria,
+        headerStyle: { backgroundColor: cores.cartao },
+        headerTitleStyle: { color: cores.texto },
+        contentStyle: { backgroundColor: cores.fundo },
+        headerRight: () => <ThemeToggleButton />,
+      }}
+    >
       {usuario ? (
         <>
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
@@ -34,6 +46,8 @@ export default function RootNavigator() {
           <Stack.Screen name="Historico" component={HistoricoScreen} options={{ title: 'Histórico de corridas' }} />
           <Stack.Screen name="Pacotes" component={PacotesScreen} options={{ title: 'Pacote de corrida' }} />
           <Stack.Screen name="Planos" component={PlanosScreen} options={{ title: 'Planos' }} />
+          <Stack.Screen name="SaldoCorrida" component={SaldoCorridaScreen} options={{ title: 'Saldo de corridas' }} />
+          <Stack.Screen name="Carteira" component={CarteiraScreen} options={{ title: 'Saldo em reais' }} />
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />

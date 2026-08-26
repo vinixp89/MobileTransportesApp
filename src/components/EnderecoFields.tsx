@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import api, { extrairMensagemErro } from '../api/client'
-import { cores } from '../theme/colors'
+import { useTema } from '../context/ThemeContext'
+import type { Cores } from '../theme/colors'
 
 export type Endereco = {
   logradouro: string
@@ -21,6 +22,18 @@ export const enderecoVazio: Endereco = {
   estado: '',
 }
 
+// Monta um texto de exibição parecido com o que vem do autocompletar (`sugestao.descricao`) —
+// usado quando o endereço chega pronto de outro lugar (ex: GPS), sem passar pela busca normal.
+function formatarEnderecoResumido(endereco: Endereco): string {
+  const partes = [
+    [endereco.logradouro, endereco.numero].filter(Boolean).join(', '),
+    endereco.bairro,
+    [endereco.cidade, endereco.estado].filter(Boolean).join(' - '),
+  ].filter(Boolean)
+
+  return partes.join(', ')
+}
+
 type Sugestao = { placeId: string; descricao: string }
 
 type Props = {
@@ -33,6 +46,8 @@ type Props = {
 // web) — o usuário digita e escolhe da lista, e a gente preenche logradouro/número/bairro/
 // cidade/estado sozinho a partir da sugestão escolhida.
 export default function EnderecoFields({ titulo, valores, onChange }: Props) {
+  const { cores } = useTema()
+  const styles = criarEstilos(cores)
   const [texto, setTexto] = useState('')
   const [sugestoes, setSugestoes] = useState<Sugestao[]>([])
   const [mostrarLista, setMostrarLista] = useState(false)
@@ -45,6 +60,17 @@ export default function EnderecoFields({ titulo, valores, onChange }: Props) {
   useEffect(() => () => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
   }, [])
+
+  // Sincroniza quando o PAI preenche `valores` de fora (ex: auto-preencher a origem via GPS) —
+  // só entra em ação nesse caso específico (texto ainda vazio), porque o fluxo normal de digitar/
+  // selecionar já mantém texto/resolvido sincronizados sozinho, sem precisar desse efeito.
+  useEffect(() => {
+    if (valores.logradouro && !texto) {
+      setTexto(formatarEnderecoResumido(valores))
+      setResolvido(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valores.logradouro])
 
   function handleDigitar(novoTexto: string) {
     setTexto(novoTexto)
@@ -162,7 +188,8 @@ export default function EnderecoFields({ titulo, valores, onChange }: Props) {
   )
 }
 
-const styles = StyleSheet.create({
+function criarEstilos(cores: Cores) {
+  return StyleSheet.create({
   container: {
     marginBottom: 16,
   },
@@ -239,4 +266,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: cores.textoSecundario,
   },
-})
+  })
+}

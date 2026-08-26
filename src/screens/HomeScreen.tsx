@@ -3,9 +3,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useFocusEffect } from '@react-navigation/native'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useAuth } from '../context/AuthContext'
+import { useTema } from '../context/ThemeContext'
+import ThemeToggleButton from '../components/ThemeToggleButton'
 import api from '../api/client'
 import { obterStatusLabel, STATUS_ATIVOS } from '../constants/statusCorrida'
-import { cores } from '../theme/colors'
+import type { Cores } from '../theme/colors'
 import type { RootStackParamList } from '../navigation/types'
 import type { Corrida } from '../types/corrida'
 
@@ -19,6 +21,8 @@ const INTERVALO_MS = 15000
 // corrida se sair do app e voltar depois.
 export default function HomeScreen({ navigation }: Props) {
   const { usuario, logout } = useAuth()
+  const { cores } = useTema()
+  const styles = criarEstilos(cores)
   const [corridaAtual, setCorridaAtual] = useState<Corrida | null>(null)
 
   useFocusEffect(
@@ -56,9 +60,12 @@ export default function HomeScreen({ navigation }: Props) {
           </Text>
         </View>
 
-        <Pressable onPress={logout} hitSlop={8}>
-          <Text style={styles.sair}>Sair</Text>
-        </Pressable>
+        <View style={styles.acoesCabecalho}>
+          <ThemeToggleButton />
+          <Pressable onPress={logout} hitSlop={8}>
+            <Text style={styles.sair}>Sair</Text>
+          </Pressable>
+        </View>
       </View>
 
       {corridaAtual && (
@@ -107,11 +114,30 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.cardClaroTitulo}>Histórico de corridas</Text>
         <Text style={styles.cardClaroTexto}>Veja suas corridas anteriores.</Text>
       </Pressable>
+
+      <View style={styles.linhaSaldos}>
+        <Pressable
+          onPress={() => navigation.navigate('SaldoCorrida')}
+          style={({ pressed }) => [styles.cardClaro, styles.cardMetade, pressed && styles.cardPressionado]}
+        >
+          <Text style={styles.cardClaroTitulo}>Saldo de corridas</Text>
+          <Text style={styles.cardClaroTexto}>Corridas de pacote disponíveis.</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => navigation.navigate('Carteira')}
+          style={({ pressed }) => [styles.cardClaro, styles.cardMetade, pressed && styles.cardPressionado]}
+        >
+          <Text style={styles.cardClaroTitulo}>Saldo em reais</Text>
+          <Text style={styles.cardClaroTexto}>Ver e recarregar carteira.</Text>
+        </Pressable>
+      </View>
     </ScrollView>
   )
 }
 
-const styles = StyleSheet.create({
+function criarEstilos(cores: Cores) {
+  return StyleSheet.create({
   tela: {
     flex: 1,
     backgroundColor: cores.fundo,
@@ -135,6 +161,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: cores.textoSecundario,
     marginTop: 2,
+  },
+  acoesCabecalho: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   sair: {
     fontSize: 14,
@@ -171,6 +202,13 @@ const styles = StyleSheet.create({
     backgroundColor: cores.cartao,
     borderWidth: 1,
     borderColor: cores.borda,
+  },
+  linhaSaldos: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cardMetade: {
+    flex: 1,
   },
   cardClaroTitulo: {
     fontSize: 15,
@@ -210,4 +248,5 @@ const styles = StyleSheet.create({
     color: '#7e22ce',
     marginTop: 2,
   },
-})
+  })
+}

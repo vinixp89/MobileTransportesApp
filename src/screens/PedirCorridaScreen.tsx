@@ -12,7 +12,9 @@ import api, { extrairMensagemErro } from '../api/client'
 import EnderecoFields, { enderecoVazio, type Endereco } from '../components/EnderecoFields'
 import RideConfirmCard, { type Estimativa } from '../components/RideConfirmCard'
 import { obterFaixa, formatarPreco } from '../constants/faixas'
-import { cores } from '../theme/colors'
+import { useOrigemAutomatica } from '../hooks/useOrigemAutomatica'
+import { useTema } from '../context/ThemeContext'
+import type { Cores } from '../theme/colors'
 import type { RootStackParamList } from '../navigation/types'
 
 const TIPO_CONSUMO = { AVULSA: 0, PACOTE: 1, BENEFICIO: 2 } as const
@@ -29,12 +31,27 @@ type Carteira = { saldo: number }
 type Props = NativeStackScreenProps<RootStackParamList, 'PedirCorrida'>
 
 export default function PedirCorridaScreen({ navigation }: Props) {
+  const { cores } = useTema()
+  const styles = criarEstilos(cores)
+
   // 'form' -> preenchendo endereços | 'confirmando' -> revisando estimativa
   // (ao confirmar, navega pra AcompanharCorrida em vez de ficar numa 3ª etapa aqui)
   const [etapa, setEtapa] = useState<'form' | 'confirmando'>('form')
 
   const [origem, setOrigem] = useState<Endereco>(enderecoVazio)
   const [destino, setDestino] = useState<Endereco>(enderecoVazio)
+
+  // Preenche a origem sozinho com a localização atual do celular assim que a tela abre — só
+  // aplica se o cliente ainda não tiver começado a digitar/escolher nada na origem, pra nunca
+  // sobrescrever o que ele já estava fazendo.
+  const { endereco: origemAutomatica } = useOrigemAutomatica()
+
+  useEffect(() => {
+    if (origemAutomatica && !origem.logradouro) {
+      setOrigem(origemAutomatica)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [origemAutomatica])
   const [tipoConsumo, setTipoConsumo] = useState<number>(TIPO_CONSUMO.AVULSA)
   const [pacotes, setPacotes] = useState<Pacote[]>([])
   const [pacoteCorridasId, setPacoteCorridasId] = useState('')
@@ -239,6 +256,9 @@ function OpcaoPagamento({
   desabilitado?: boolean
   onPress: () => void
 }) {
+  const { cores } = useTema()
+  const styles = criarEstilos(cores)
+
   return (
     <Pressable
       onPress={onPress}
@@ -253,7 +273,8 @@ function OpcaoPagamento({
   )
 }
 
-const styles = StyleSheet.create({
+function criarEstilos(cores: Cores) {
+  return StyleSheet.create({
   tela: {
     flex: 1,
     backgroundColor: cores.fundo,
@@ -352,4 +373,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: cores.texto,
   },
-})
+  })
+}

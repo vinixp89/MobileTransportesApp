@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import api, { extrairMensagemErro } from '../api/client'
 import { obterFaixa, formatarPreco } from '../constants/faixas'
-import { cores } from '../theme/colors'
+import { useTema } from '../context/ThemeContext'
+import type { Cores } from '../theme/colors'
 
 type Tamanho = { quantidade: number; preco: number }
 type ItemCatalogo = { faixa: number; precoAvulso: number; tamanhos: Tamanho[] }
 
 export default function PacotesScreen() {
+  const { cores } = useTema()
+  const styles = criarEstilos(cores)
   const [catalogo, setCatalogo] = useState<ItemCatalogo[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
@@ -96,7 +99,8 @@ export default function PacotesScreen() {
   )
 }
 
-const styles = StyleSheet.create({
+function criarEstilos(cores: Cores) {
+  return StyleSheet.create({
   tela: {
     flex: 1,
     backgroundColor: cores.fundo,
@@ -183,4 +187,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: 'rgba(255,255,255,0.9)',
   },
-})
+  })
+}

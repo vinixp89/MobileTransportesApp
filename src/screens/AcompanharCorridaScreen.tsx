@@ -6,7 +6,8 @@ import RideMap from '../components/RideMap'
 import { obterFaixa, formatarPreco } from '../constants/faixas'
 import { obterStatusLabel, STATUS_CONFIRMADA, STATUS_FINALIZADA, STATUS_CANCELADA } from '../constants/statusCorrida'
 import { notificarMudancaDeStatus } from '../notifications/notificar'
-import { cores } from '../theme/colors'
+import { useTema } from '../context/ThemeContext'
+import type { Cores } from '../theme/colors'
 import type { RootStackParamList } from '../navigation/types'
 import type { Corrida } from '../types/corrida'
 
@@ -27,6 +28,8 @@ const INTERVALO_MS = 4000
 // motorista aceita, mostra o código de confirmação (uma vez) e a posição dele no mapa.
 export default function AcompanharCorridaScreen({ route, navigation }: Props) {
   const { corridaId } = route.params
+  const { cores } = useTema()
+  const styles = criarEstilos(cores)
 
   const [corrida, setCorrida] = useState<Corrida | null>(null)
   const [motorista, setMotorista] = useState<LocalizacaoMotorista | null>(null)
@@ -210,7 +213,8 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
   )
 }
 
-const styles = StyleSheet.create({
+function criarEstilos(cores: Cores) {
+  return StyleSheet.create({
   tela: {
     flex: 1,
     backgroundColor: cores.fundo,
@@ -385,4 +389,5 @@ const styles = StyleSheet.create({
   botaoPressionado: {
     opacity: 0.7,
   },
-})
+  })
+}

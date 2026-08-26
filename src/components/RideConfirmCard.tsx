@@ -1,7 +1,8 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import RideMap from './RideMap'
 import { obterFaixa, formatarPreco, formatarDuracao } from '../constants/faixas'
-import { cores } from '../theme/colors'
+import { useTema } from '../context/ThemeContext'
+import type { Cores } from '../theme/colors'
 
 type EnderecoResolvido = {
   logradouro: string
@@ -46,6 +47,8 @@ export default function RideConfirmCard({
   bloqueado = false,
   gratisPlano = false,
 }: Props) {
+  const { cores } = useTema()
+  const styles = criarEstilos(cores)
   const faixa = obterFaixa(estimativa.faixa)
   const duracao = formatarDuracao(estimativa.duracaoEstimadaMinutos)
 
@@ -130,7 +133,8 @@ export default function RideConfirmCard({
   )
 }
 
-const styles = StyleSheet.create({
+function criarEstilos(cores: Cores) {
+  return StyleSheet.create({
   card: {
     backgroundColor: cores.cartao,
     borderRadius: 16,
@@ -277,4 +281,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: cores.textoSecundario,
   },
-})
+  })
+}

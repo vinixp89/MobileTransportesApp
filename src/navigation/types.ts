@@ -6,4 +6,6 @@ export type RootStackParamList = {
   Historico: undefined
   Pacotes: undefined
   Planos: undefined
+  SaldoCorrida: undefined
+  Carteira: undefined
 }

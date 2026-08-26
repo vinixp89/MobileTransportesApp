@@ -11,10 +11,13 @@ import {
   View,
 } from 'react-native'
 import { useAuth } from '../context/AuthContext'
-import { cores } from '../theme/colors'
+import { useTema } from '../context/ThemeContext'
+import type { Cores } from '../theme/colors'
 
 export default function LoginScreen() {
   const { carregando, login } = useAuth()
+  const { cores } = useTema()
+  const styles = criarEstilos(cores)
 
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -94,7 +97,8 @@ export default function LoginScreen() {
   )
 }
 
-const styles = StyleSheet.create({
+function criarEstilos(cores: Cores) {
+  return StyleSheet.create({
   tela: {
     flex: 1,
     backgroundColor: cores.fundo,
@@ -184,4 +188,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-})
+  })
+}
