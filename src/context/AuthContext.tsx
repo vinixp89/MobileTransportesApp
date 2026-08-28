@@ -9,11 +9,34 @@ type Usuario = {
   roles: string[]
 }
 
+export type DadosCadastroCliente = {
+  nome: string
+  cpf: string
+  telefone: string
+  logradouro: string
+  numero: string
+  complemento?: string
+  bairro: string
+  cidade: string
+  estado: string
+}
+
 type AuthContextType = {
   usuario: Usuario | null
   carregando: boolean
   verificandoSessao: boolean
   login: (email: string, senha: string) => Promise<{ sucesso: boolean; mensagem?: string }>
+  cadastrar: (
+    email: string,
+    senha: string,
+    cliente: DadosCadastroCliente
+  ) => Promise<{ sucesso: boolean; mensagem?: string }>
+  esqueciSenha: (email: string) => Promise<{ sucesso: boolean; mensagem: string }>
+  redefinirSenha: (
+    email: string,
+    codigo: string,
+    novaSenha: string
+  ) => Promise<{ sucesso: boolean; mensagem?: string }>
   logout: () => Promise<void>
 }
 
@@ -72,13 +95,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function cadastrar(email: string, senha: string, cliente: DadosCadastroCliente) {
+    setCarregando(true)
+
+    try {
+      const { data } = await api.post('/Auth/registrar-cliente', { email, senha, cliente })
+
+      await salvarToken(data.token)
+      setUsuario(decodificarUsuario(data.token))
+
+      return { sucesso: true }
+    } catch (error) {
+      return { sucesso: false, mensagem: extrairMensagemErro(error) }
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  // Sempre responde "sucesso" com a mensagem genérica do backend, mesmo se o e-mail não tiver
+  // conta — evita que alguém descubra quais e-mails existem só tentando esse fluxo.
+  async function esqueciSenha(email: string) {
+    setCarregando(true)
+
+    try {
+      const { data } = await api.post('/Auth/esqueci-senha', { email })
+      return { sucesso: true, mensagem: data.mensagem as string }
+    } catch (error) {
+      return { sucesso: false, mensagem: extrairMensagemErro(error) }
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  async function redefinirSenha(email: string, codigo: string, novaSenha: string) {
+    setCarregando(true)
+
+    try {
+      const { data } = await api.post('/Auth/redefinir-senha', { email, codigo, novaSenha })
+
+      await salvarToken(data.token)
+      setUsuario(decodificarUsuario(data.token))
+
+      return { sucesso: true }
+    } catch (error) {
+      return { sucesso: false, mensagem: extrairMensagemErro(error) }
+    } finally {
+      setCarregando(false)
+    }
+  }
+
   async function logout() {
     await apagarToken()
     setUsuario(null)
   }
 
   return (
-    <AuthContext.Provider value={{ usuario, carregando, verificandoSessao, login, logout }}>
+    <AuthContext.Provider
+      value={{ usuario, carregando, verificandoSessao, login, cadastrar, esqueciSenha, redefinirSenha, logout }}
+    >
       {children}
     </AuthContext.Provider>
   )

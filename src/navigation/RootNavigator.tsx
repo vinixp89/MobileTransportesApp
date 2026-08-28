@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { useTema } from '../context/ThemeContext'
 import ThemeToggleButton from '../components/ThemeToggleButton'
 import LoginScreen from '../screens/LoginScreen'
+import CadastroScreen from '../screens/CadastroScreen'
+import EsqueciSenhaScreen from '../screens/EsqueciSenhaScreen'
 import HomeScreen from '../screens/HomeScreen'
 import PedirCorridaScreen from '../screens/PedirCorridaScreen'
 import AcompanharCorridaScreen from '../screens/AcompanharCorridaScreen'
@@ -50,7 +52,11 @@ export default function RootNavigator() {
           <Stack.Screen name="Carteira" component={CarteiraScreen} options={{ title: 'Saldo em reais' }} />
         </>
       ) : (
-        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="Cadastro" component={CadastroScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="EsqueciSenha" component={EsqueciSenhaScreen} options={{ headerShown: false }} />
+        </>
       )}
     </Stack.Navigator>
   )
