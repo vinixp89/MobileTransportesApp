@@ -128,6 +128,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
       setEstimativa(data)
       setEtapa('confirmando')
     } catch (error) {
+      console.error('[DEBUG estimar]', error)
       setErro(extrairMensagemErro(error))
     } finally {
       setEstimando(false)
