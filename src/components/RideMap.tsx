@@ -12,7 +12,7 @@ type Props = {
   motoristaPos?: Ponto | null
 }
 
-// Mesmo mapa do front-end web (Leaflet + tiles OSM/CARTO, sem chave de API, trajeto real via
+// Mesmo mapa do front-end web (Leaflet + tiles OpenStreetMap, sem chave de API, trajeto real via
 // OSRM) — só que rodando dentro de uma WebView, já que o React Native não tem um jeito nativo
 // de renderizar isso sem depender do SDK do Google Maps (que exigiria chave de API paga/gerenciada).
 function montarHtml(origem: Ponto, destino: Ponto, corHex: string, motoristaPos?: Ponto | null) {
@@ -45,7 +45,7 @@ function montarHtml(origem: Ponto, destino: Ponto, corHex: string, motoristaPos?
       doubleClickZoom: false,
     }).setView(origemLatLng, 13);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(mapa);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
 
     L.circleMarker(origemLatLng, { radius: 7, color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 1 }).addTo(mapa);
     L.circleMarker(destinoLatLng, { radius: 7, color: corHex, fillColor: corHex, fillOpacity: 1 }).addTo(mapa);
