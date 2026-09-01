@@ -19,7 +19,7 @@ function montarHtml(origem: Ponto, destino: Ponto, corHex: string, motoristaPos?
   return `<!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     html, body, #mapa { height: 100%; margin: 0; padding: 0; }
@@ -37,12 +37,12 @@ function montarHtml(origem: Ponto, destino: Ponto, corHex: string, motoristaPos?
     const destinoLatLng = [destino.latitude, destino.longitude];
 
     const mapa = L.map('mapa', {
-      zoomControl: false,
+      zoomControl: true,
       attributionControl: false,
-      dragging: false,
-      scrollWheelZoom: false,
-      touchZoom: false,
-      doubleClickZoom: false,
+      dragging: true,
+      scrollWheelZoom: true,
+      touchZoom: true,
+      doubleClickZoom: true,
     }).setView(origemLatLng, 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
@@ -91,6 +91,10 @@ export default function RideMap({ origem, destino, corHex, motoristaPos }: Props
         source={{ html: montarHtml(origem, destino, corHex, motoristaPos) }}
         style={styles.webview}
         scrollEnabled={false}
+        // O card fica dentro de uma ScrollView (ver PedirCorridaScreen) — sem isso, no Android o
+        // gesto de arrastar/dar zoom dentro do mapa é engolido pelo scroll da tela em vez de
+        // chegar no Leaflet.
+        nestedScrollEnabled
         originWhitelist={['*']}
       />
     </View>
