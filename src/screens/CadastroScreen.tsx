@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import {
   ActivityIndicator,
@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { useTema } from '../context/ThemeContext'
 import EnderecoFields, { enderecoVazio, type Endereco } from '../components/EnderecoFields'
@@ -18,6 +19,8 @@ import type { Cores } from '../theme/colors'
 import type { RootStackParamList } from '../navigation/types'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Cadastro'>
+
+type PromocaoStatus = { limite: number; concedidas: number; vagasRestantes: number }
 
 // Formulário de cadastro de Cliente — espelha os campos exigidos pelo backend
 // (POST /Auth/registrar-cliente: email, senha, cliente{nome,cpf,telefone,endereço}).
@@ -34,6 +37,16 @@ export default function CadastroScreen({ navigation }: Props) {
   const [confirmarSenha, setConfirmarSenha] = useState('')
   const [endereco, setEndereco] = useState<Endereco>(enderecoVazio)
   const [erro, setErro] = useState('')
+  const [promocao, setPromocao] = useState<PromocaoStatus | null>(null)
+
+  // Banner da promoção de lançamento (ver PromocoesController/PromocaoLancamentoService) — endpoint
+  // público, então falha em silêncio (sem token ainda, sem conta criada) se a API não responder.
+  useEffect(() => {
+    api
+      .get<PromocaoStatus>('/Promocoes/lancamento')
+      .then(({ data }) => setPromocao(data))
+      .catch(() => {})
+  }, [])
 
   const enderecoResolvido = Boolean(endereco.logradouro)
   const camposObrigatoriosPreenchidos =
@@ -69,6 +82,16 @@ export default function CadastroScreen({ navigation }: Props) {
       <ScrollView contentContainerStyle={styles.conteudo} keyboardShouldPersistTaps="handled">
         <Text style={styles.titulo}>Criar conta</Text>
         <Text style={styles.subtitulo}>Preencha seus dados pra começar a pedir corridas.</Text>
+
+        {promocao && promocao.vagasRestantes > 0 ? (
+          <View style={styles.promoCaixa}>
+            <Text style={styles.promoTitulo}>🎉 Promoção de lançamento</Text>
+            <Text style={styles.promoTexto}>
+              Restam {promocao.vagasRestantes} de {promocao.limite} vagas! Cadastre-se agora e ganhe 1 corrida grátis
+              (faixa Amarela).
+            </Text>
+          </View>
+        ) : null}
 
         <View style={styles.campo}>
           <Text style={styles.rotulo}>Nome completo</Text>
@@ -188,6 +211,24 @@ function criarEstilos(cores: Cores) {
       fontSize: 13,
       color: cores.textoSecundario,
       marginBottom: 24,
+    },
+    promoCaixa: {
+      backgroundColor: cores.amarelo,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      marginBottom: 20,
+    },
+    promoTitulo: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#1f2430',
+      marginBottom: 4,
+    },
+    promoTexto: {
+      fontSize: 13,
+      color: '#1f2430',
+      lineHeight: 18,
     },
     campo: {
       marginBottom: 16,
