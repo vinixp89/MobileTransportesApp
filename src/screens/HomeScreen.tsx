@@ -111,6 +111,14 @@ export default function HomeScreen({ navigation }: Props) {
       </Pressable>
 
       <Pressable
+        onPress={() => navigation.navigate('DoarCorrida')}
+        style={({ pressed }) => [styles.card, { backgroundColor: '#ec4899' }, pressed && styles.cardPressionado]}
+      >
+        <Text style={styles.cardTitulo}>Doar corrida</Text>
+        <Text style={styles.cardTexto}>Presenteie outra pessoa com uma corrida — sai do seu saldo em reais.</Text>
+      </Pressable>
+
+      <Pressable
         onPress={() => navigation.navigate('Historico')}
         style={({ pressed }) => [styles.cardClaro, pressed && styles.cardPressionado]}
       >

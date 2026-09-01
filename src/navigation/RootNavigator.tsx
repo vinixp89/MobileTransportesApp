@@ -14,6 +14,7 @@ import PacotesScreen from '../screens/PacotesScreen'
 import PlanosScreen from '../screens/PlanosScreen'
 import SaldoCorridaScreen from '../screens/SaldoCorridaScreen'
 import CarteiraScreen from '../screens/CarteiraScreen'
+import DoarCorridaScreen from '../screens/DoarCorridaScreen'
 import type { RootStackParamList } from './types'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -50,6 +51,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Planos" component={PlanosScreen} options={{ title: 'Planos' }} />
           <Stack.Screen name="SaldoCorrida" component={SaldoCorridaScreen} options={{ title: 'Saldo de corridas' }} />
           <Stack.Screen name="Carteira" component={CarteiraScreen} options={{ title: 'Saldo em reais' }} />
+          <Stack.Screen name="DoarCorrida" component={DoarCorridaScreen} options={{ title: 'Doar corrida' }} />
         </>
       ) : (
         <>

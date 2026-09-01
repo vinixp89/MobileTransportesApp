@@ -10,4 +10,5 @@ export type RootStackParamList = {
   Planos: undefined
   SaldoCorrida: undefined
   Carteira: undefined
+  DoarCorrida: undefined
 }
