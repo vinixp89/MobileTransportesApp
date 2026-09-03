@@ -14,6 +14,9 @@ import type { Corrida } from '../types/corrida'
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>
 
 const INTERVALO_MS = 15000
+const STATUS_ASSINATURA_ATIVA = 1
+
+type AssinaturaResumo = { nomePlano: string; status: number }
 
 // Espelha os cards de ação da HomePage do front-end web (Cliente): Pedir corrida, Pacote de
 // corrida e Planos, no mesmo verde de marca. Também mostra um banner de "corrida em andamento"
@@ -24,6 +27,7 @@ export default function HomeScreen({ navigation }: Props) {
   const { cores } = useTema()
   const styles = criarEstilos(cores)
   const [corridaAtual, setCorridaAtual] = useState<Corrida | null>(null)
+  const [assinatura, setAssinatura] = useState<AssinaturaResumo | null>(null)
 
   useFocusEffect(
     useCallback(() => {
@@ -43,12 +47,23 @@ export default function HomeScreen({ navigation }: Props) {
       buscar()
       const intervalo = setInterval(buscar, INTERVALO_MS)
 
+      // Só busca 1x ao focar a tela (não precisa de polling — muda raramente e a própria tela de
+      // Planos já atualiza isso quando o cliente assina/cancela).
+      api
+        .get<AssinaturaResumo | null>('/Planos/minha-assinatura')
+        .then(({ data }) => {
+          if (ativo) setAssinatura(data)
+        })
+        .catch(() => {})
+
       return () => {
         ativo = false
         clearInterval(intervalo)
       }
     }, [])
   )
+
+  const planoAtivo = assinatura?.status === STATUS_ASSINATURA_ATIVA ? assinatura : null
 
   return (
     <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo}>
@@ -107,7 +122,11 @@ export default function HomeScreen({ navigation }: Props) {
         style={({ pressed }) => [styles.card, { backgroundColor: cores.roxo }, pressed && styles.cardPressionado]}
       >
         <Text style={styles.cardTitulo}>Planos</Text>
-        <Text style={styles.cardTexto}>Assine um plano e ganhe desconto e prioridade nas corridas.</Text>
+        <Text style={styles.cardTexto}>
+          {planoAtivo
+            ? `Plano atual: ${planoAtivo.nomePlano}`
+            : 'Assine um plano e ganhe desconto e prioridade nas corridas.'}
+        </Text>
       </Pressable>
 
       <Pressable

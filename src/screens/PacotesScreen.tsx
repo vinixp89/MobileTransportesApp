@@ -7,15 +7,26 @@ import type { Cores } from '../theme/colors'
 
 type Tamanho = { quantidade: number; preco: number }
 type ItemCatalogo = { faixa: number; precoAvulso: number; tamanhos: Tamanho[] }
+type Assinatura = { nomePlano: string; status: number; percentualDescontoPacotes: number }
+
+const STATUS_ATIVA = 1
 
 export default function PacotesScreen() {
   const { cores } = useTema()
   const styles = criarEstilos(cores)
   const [catalogo, setCatalogo] = useState<ItemCatalogo[]>([])
+  const [assinatura, setAssinatura] = useState<Assinatura | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [comprando, setComprando] = useState('')
   const [mensagemSucesso, setMensagemSucesso] = useState('')
+
+  // Desconto do plano ativo (ver PlanoAssinatura.PercentualDescontoPacotes no backend) — só mostra
+  // preço com desconto aqui na tela; quem calcula e cobra de verdade é o backend na hora da compra
+  // (PacoteCorridasService.CriarAsync), então mesmo se esse valor ficar desatualizado por algum
+  // motivo, nunca cobra errado.
+  const percentualDesconto =
+    assinatura?.status === STATUS_ATIVA ? assinatura.percentualDescontoPacotes : 0
 
   useEffect(() => {
     api
@@ -23,6 +34,11 @@ export default function PacotesScreen() {
       .then(({ data }) => setCatalogo(data))
       .catch((error) => setErro(extrairMensagemErro(error)))
       .finally(() => setCarregando(false))
+
+    api
+      .get('/Planos/minha-assinatura')
+      .then(({ data }) => setAssinatura(data))
+      .catch(() => {})
   }, [])
 
   async function handleComprar(faixaValor: number, quantidade: number) {
@@ -50,6 +66,14 @@ export default function PacotesScreen() {
         usar.
       </Text>
 
+      {percentualDesconto > 0 ? (
+        <View style={styles.descontoCaixa}>
+          <Text style={styles.descontoTexto}>
+            🎉 Seu plano {assinatura?.nomePlano} dá {Math.round(percentualDesconto * 100)}% de desconto nos pacotes — já aplicado nos preços abaixo.
+          </Text>
+        </View>
+      ) : null}
+
       {mensagemSucesso ? (
         <View style={styles.sucessoCaixa}>
           <Text style={styles.sucessoTexto}>{mensagemSucesso}</Text>
@@ -74,6 +98,7 @@ export default function PacotesScreen() {
               <View style={styles.tamanhosGrid}>
                 {item.tamanhos.map((tamanho) => {
                   const chave = `${item.faixa}-${tamanho.quantidade}`
+                  const precoComDesconto = tamanho.preco * (1 - percentualDesconto)
                   return (
                     <Pressable
                       key={chave}
@@ -84,9 +109,22 @@ export default function PacotesScreen() {
                       <Text style={[styles.tamanhoQtd, faixa.textoClaro && styles.textoEscuro]}>
                         {tamanho.quantidade} corridas
                       </Text>
-                      <Text style={[styles.tamanhoPreco, faixa.textoClaro && styles.textoEscuro]}>
-                        {comprando === chave ? 'Comprando...' : formatarPreco(tamanho.preco)}
-                      </Text>
+                      {comprando === chave ? (
+                        <Text style={[styles.tamanhoPreco, faixa.textoClaro && styles.textoEscuro]}>Comprando...</Text>
+                      ) : percentualDesconto > 0 ? (
+                        <View style={{ alignItems: 'center' }}>
+                          <Text style={[styles.tamanhoPrecoRiscado, faixa.textoClaro && styles.textoEscuroSecundario]}>
+                            {formatarPreco(tamanho.preco)}
+                          </Text>
+                          <Text style={[styles.tamanhoPreco, faixa.textoClaro && styles.textoEscuro]}>
+                            {formatarPreco(precoComDesconto)}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={[styles.tamanhoPreco, faixa.textoClaro && styles.textoEscuro]}>
+                          {formatarPreco(tamanho.preco)}
+                        </Text>
+                      )}
                     </Pressable>
                   )
                 })}
@@ -113,6 +151,17 @@ function criarEstilos(cores: Cores) {
   descricao: {
     fontSize: 13,
     color: cores.textoSecundario,
+  },
+  descontoCaixa: {
+    backgroundColor: cores.primariaClara,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  descontoTexto: {
+    fontSize: 13,
+    color: cores.primariaEscura,
+    fontWeight: '600',
   },
   sucessoCaixa: {
     backgroundColor: cores.primariaClara,
@@ -186,6 +235,14 @@ function criarEstilos(cores: Cores) {
   tamanhoPreco: {
     fontSize: 11,
     color: 'rgba(255,255,255,0.9)',
+  },
+  tamanhoPrecoRiscado: {
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.7)',
+    textDecorationLine: 'line-through',
+  },
+  textoEscuroSecundario: {
+    color: 'rgba(31,41,55,0.65)',
   },
   })
 }
