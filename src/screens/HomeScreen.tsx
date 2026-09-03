@@ -5,6 +5,7 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useAuth } from '../context/AuthContext'
 import { useTema } from '../context/ThemeContext'
 import ThemeToggleButton from '../components/ThemeToggleButton'
+import MenuHamburguer from '../components/MenuHamburguer'
 import api from '../api/client'
 import { obterStatusLabel, STATUS_ATIVOS } from '../constants/statusCorrida'
 import type { Cores } from '../theme/colors'
@@ -23,7 +24,7 @@ type AssinaturaResumo = { nomePlano: string; status: number }
 // quando o cliente tem alguma pendente/confirmada/em andamento — pra ele não perder o fio da
 // corrida se sair do app e voltar depois.
 export default function HomeScreen({ navigation }: Props) {
-  const { usuario, logout } = useAuth()
+  const { usuario } = useAuth()
   const { cores } = useTema()
   const styles = criarEstilos(cores)
   const [corridaAtual, setCorridaAtual] = useState<Corrida | null>(null)
@@ -80,9 +81,7 @@ export default function HomeScreen({ navigation }: Props) {
 
         <View style={styles.acoesCabecalho}>
           <ThemeToggleButton />
-          <Pressable onPress={logout} hitSlop={8}>
-            <Text style={styles.sair}>Sair</Text>
-          </Pressable>
+          <MenuHamburguer navigation={navigation} />
         </View>
       </View>
 
@@ -205,11 +204,6 @@ function criarEstilos(cores: Cores) {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  sair: {
-    fontSize: 14,
-    color: cores.textoSecundario,
-    paddingVertical: 4,
   },
   card: {
     borderRadius: 16,

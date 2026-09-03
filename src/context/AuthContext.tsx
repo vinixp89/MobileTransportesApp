@@ -38,6 +38,7 @@ type AuthContextType = {
     novaSenha: string
   ) => Promise<{ sucesso: boolean; mensagem?: string }>
   logout: () => Promise<void>
+  excluirConta: () => Promise<{ sucesso: boolean; mensagem?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -149,9 +150,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsuario(null)
   }
 
+  // Anonimiza os dados da conta no backend (ver AuthController.ExcluirConta) e desloga em seguida —
+  // não tem como desfazer, então quem chama isso já deve ter confirmado com o usuário antes.
+  async function excluirConta() {
+    setCarregando(true)
+
+    try {
+      await api.post('/Auth/excluir-conta')
+      await logout()
+      return { sucesso: true }
+    } catch (error) {
+      return { sucesso: false, mensagem: extrairMensagemErro(error) }
+    } finally {
+      setCarregando(false)
+    }
+  }
+
   return (
     <AuthContext.Provider
-      value={{ usuario, carregando, verificandoSessao, login, cadastrar, esqueciSenha, redefinirSenha, logout }}
+      value={{
+        usuario,
+        carregando,
+        verificandoSessao,
+        login,
+        cadastrar,
+        esqueciSenha,
+        redefinirSenha,
+        logout,
+        excluirConta,
+      }}
     >
       {children}
     </AuthContext.Provider>
