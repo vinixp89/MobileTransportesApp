@@ -16,6 +16,7 @@
     },
     "android": {
       "package": "com.vainaboa.cliente",
+      "versionCode": 4,
       "adaptiveIcon": {
         "backgroundColor": "#16a34a",
         "foregroundImage": "./assets/android-icon-foreground.png",
