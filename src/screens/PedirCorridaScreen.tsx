@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import * as WebBrowser from 'expo-web-browser'
 import {
   ActivityIndicator,
   Pressable,
@@ -11,7 +12,7 @@ import {
 import api, { extrairMensagemErro } from '../api/client'
 import EnderecoFields, { enderecoVazio, type Endereco } from '../components/EnderecoFields'
 import RideConfirmCard, { type Estimativa } from '../components/RideConfirmCard'
-import { obterFaixa, formatarPreco } from '../constants/faixas'
+import { obterFaixa } from '../constants/faixas'
 import { useOrigemAutomatica } from '../hooks/useOrigemAutomatica'
 import { useTema } from '../context/ThemeContext'
 import type { Cores } from '../theme/colors'
@@ -26,7 +27,6 @@ type Beneficio = {
   disponivelParaUso: boolean
   jaUsadoNoMes: boolean
 }
-type Carteira = { saldo: number }
 
 type Props = NativeStackScreenProps<RootStackParamList, 'PedirCorrida'>
 
@@ -56,7 +56,6 @@ export default function PedirCorridaScreen({ navigation }: Props) {
   const [pacotes, setPacotes] = useState<Pacote[]>([])
   const [pacoteCorridasId, setPacoteCorridasId] = useState('')
   const [beneficio, setBeneficio] = useState<Beneficio | null>(null)
-  const [carteira, setCarteira] = useState<Carteira | null>(null)
 
   const [estimando, setEstimando] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
@@ -79,13 +78,6 @@ export default function PedirCorridaScreen({ navigation }: Props) {
       .catch(() => setBeneficio(null))
   }, [])
 
-  useEffect(() => {
-    api
-      .get('/Carteiras/minha-carteira')
-      .then(({ data }) => setCarteira(data))
-      .catch(() => setCarteira(null))
-  }, [])
-
   const pacotesDisponiveis = pacotes.filter((p) => p.quantidadeRestante > 0)
   const pacoteSelecionado = pacotesDisponiveis.find((p) => p.id === pacoteCorridasId)
   const corBeneficio = beneficio?.temBeneficio ? obterFaixa(beneficio.corBeneficio) : null
@@ -98,11 +90,6 @@ export default function PedirCorridaScreen({ navigation }: Props) {
   const erroFaixaBeneficio =
     estimativa && tipoConsumo === TIPO_CONSUMO.BENEFICIO && corBeneficio && corBeneficio.valor !== estimativa.faixa
       ? `Sua corrida grátis vale só pra faixa ${corBeneficio.nome}, mas essa corrida caiu na faixa ${obterFaixa(estimativa.faixa).nome}. Volte e escolha outra forma de pagamento.`
-      : ''
-
-  const erroSaldoAvulsa =
-    estimativa && tipoConsumo === TIPO_CONSUMO.AVULSA && carteira && carteira.saldo < estimativa.valorReferencia
-      ? `Saldo insuficiente na carteira (você tem ${formatarPreco(carteira.saldo)}). Recarregue antes de confirmar, ou escolha outra forma de pagamento.`
       : ''
 
   const origemResolvida = Boolean(origem.logradouro)
@@ -140,6 +127,16 @@ export default function PedirCorridaScreen({ navigation }: Props) {
     setConfirmando(true)
 
     try {
+      // Corrida avulsa não tem mais saldo pré-carregado pra debitar — abre o checkout do Mercado
+      // Pago pelo valor exato dela, e só cria/libera a corrida de verdade quando o pagamento for
+      // confirmado do outro lado (ver PagamentoService no backend).
+      if (tipoConsumo === TIPO_CONSUMO.AVULSA) {
+        const { data } = await api.post('/Corridas/avulsa', { origem, destino, tipoConsumo, pacoteCorridasId: null })
+        await WebBrowser.openBrowserAsync(data.checkoutUrl)
+        navigation.replace('AcompanharCorrida', { corridaId: data.corridaId })
+        return
+      }
+
       const { data } = await api.post('/Corridas', {
         origem,
         destino,
@@ -167,7 +164,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
             <Text style={styles.legend}>Forma de pagamento</Text>
 
             <OpcaoPagamento
-              label={`Corrida avulsa${carteira ? ` (saldo: ${formatarPreco(carteira.saldo)})` : ''}`}
+              label="Corrida avulsa (pagar agora via Mercado Pago)"
               selecionado={tipoConsumo === TIPO_CONSUMO.AVULSA}
               onPress={() => setTipoConsumo(TIPO_CONSUMO.AVULSA)}
             />
@@ -237,8 +234,8 @@ export default function PedirCorridaScreen({ navigation }: Props) {
           onConfirmar={handleConfirmar}
           onCancelar={() => setEtapa('form')}
           confirmando={confirmando}
-          erro={erro || erroFaixaPacote || erroFaixaBeneficio || erroSaldoAvulsa}
-          bloqueado={Boolean(erroFaixaPacote || erroFaixaBeneficio || erroSaldoAvulsa)}
+          erro={erro || erroFaixaPacote || erroFaixaBeneficio}
+          bloqueado={Boolean(erroFaixaPacote || erroFaixaBeneficio)}
           gratisPlano={tipoConsumo === TIPO_CONSUMO.BENEFICIO}
         />
       )}

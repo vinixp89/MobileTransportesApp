@@ -5,7 +5,13 @@ import api, { extrairMensagemErro } from '../api/client'
 import RideMap from '../components/RideMap'
 import NavegacaoFlutuante from '../components/NavegacaoFlutuante'
 import { obterFaixa, formatarPreco } from '../constants/faixas'
-import { obterStatusLabel, STATUS_CONFIRMADA, STATUS_FINALIZADA, STATUS_CANCELADA } from '../constants/statusCorrida'
+import {
+  obterStatusLabel,
+  STATUS_CONFIRMADA,
+  STATUS_FINALIZADA,
+  STATUS_CANCELADA,
+  STATUS_AGUARDANDO_PAGAMENTO,
+} from '../constants/statusCorrida'
 import { notificarMudancaDeStatus } from '../notifications/notificar'
 import { useTema } from '../context/ThemeContext'
 import type { Cores } from '../theme/colors'
@@ -123,7 +129,8 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
 
   const faixa = obterFaixa(corrida.faixaContratada)
   const status = obterStatusLabel(corrida.status)
-  const podeCancelar = corrida.status === 0 || corrida.status === STATUS_CONFIRMADA
+  const podeCancelar =
+    corrida.status === 0 || corrida.status === STATUS_CONFIRMADA || corrida.status === STATUS_AGUARDANDO_PAGAMENTO
   const motoristaPos =
     motorista && motorista.latitude != null && motorista.longitude != null
       ? { latitude: motorista.latitude, longitude: motorista.longitude }

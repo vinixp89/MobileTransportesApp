@@ -1,42 +1,32 @@
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
 import api, { extrairMensagemErro } from '../api/client'
-import { obterFaixa, formatarPreco } from '../constants/faixas'
+import { obterFaixa } from '../constants/faixas'
 import { useTema } from '../context/ThemeContext'
 import type { Cores } from '../theme/colors'
 
-type CatalogoItem = { faixa: number; precoAvulso: number }
 type Pacote = { id: string; faixa: number; quantidadeRestante: number }
 type Destinatario = { id: string; nome: string; email: string }
 
 // Doar uma corrida pra outro cliente: busca o destinatário por e-mail exato (nunca por nome, pra
 // não virar uma lista pesquisável de clientes — ver ClientesController.Buscar) e, uma vez achado,
-// escolhe se paga com o saldo da carteira ou usa uma corrida de um pacote que já tem — mesma tela
-// do front-end web (DoarCorridaPage.jsx), ver DoacaoService no backend.
+// usa uma corrida de um pacote que já tem (não cobra de novo, só transfere 1 corrida do pacote).
 export default function DoarCorridaScreen() {
   const { cores } = useTema()
   const styles = criarEstilos(cores)
 
-  const [catalogo, setCatalogo] = useState<CatalogoItem[]>([])
-  const [saldo, setSaldo] = useState<number | null>(null)
   const [meusPacotes, setMeusPacotes] = useState<Pacote[]>([])
 
   const [email, setEmail] = useState('')
   const [buscando, setBuscando] = useState(false)
   const [destinatario, setDestinatario] = useState<Destinatario | null>(null)
-  const [doando, setDoando] = useState<string | null>(null) // "carteira-<faixa>" ou "pacote-<id>"
+  const [doando, setDoando] = useState<string | null>(null)
   const [erro, setErro] = useState('')
   const [mensagemSucesso, setMensagemSucesso] = useState('')
 
   useEffect(() => {
-    api.get<CatalogoItem[]>('/PacotesCorridas/catalogo').then(({ data }) => setCatalogo(data))
-    carregarCarteira()
     carregarMeusPacotes()
   }, [])
-
-  function carregarCarteira() {
-    return api.get('/Carteiras/minha-carteira').then(({ data }) => setSaldo(data.saldo))
-  }
 
   function carregarMeusPacotes() {
     return api.get<Pacote[]>('/PacotesCorridas/meus-pacotes').then(({ data }) => setMeusPacotes(data))
@@ -60,9 +50,9 @@ export default function DoarCorridaScreen() {
     }
   }
 
-  async function handleDoar(faixaValor: number, pacoteCorridasId: string | null, chave: string) {
+  async function handleDoar(faixaValor: number, pacoteCorridasId: string) {
     if (!destinatario) return
-    setDoando(chave)
+    setDoando(pacoteCorridasId)
     setErro('')
     setMensagemSucesso('')
 
@@ -74,14 +64,11 @@ export default function DoarCorridaScreen() {
       })
 
       const faixa = obterFaixa(faixaValor)
-      const origem = pacoteCorridasId
-        ? `Restaram ${data.quantidadeRestantePacote} corrida(s) nesse pacote.`
-        : `Saldo restante na carteira: ${formatarPreco(data.saldoRestante)}.`
-
-      setMensagemSucesso(`Corrida ${faixa.nome} doada pra ${data.nomeDestinatario}! ${origem}`)
+      setMensagemSucesso(
+        `Corrida ${faixa.nome} doada pra ${data.nomeDestinatario}! Restaram ${data.quantidadeRestantePacote} corrida(s) nesse pacote.`,
+      )
       setDestinatario(null)
       setEmail('')
-      carregarCarteira()
       carregarMeusPacotes()
     } catch (error) {
       setErro(extrairMensagemErro(error))
@@ -93,10 +80,9 @@ export default function DoarCorridaScreen() {
   return (
     <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo}>
       <Text style={styles.descricao}>
-        Doe uma corrida pra outra pessoa — pagando com o saldo da sua carteira ou usando uma corrida
-        de um pacote que você já tem.
+        Doe uma corrida de um pacote que você já tem pra outra pessoa — não cobra de novo, só
+        transfere 1 corrida do pacote.
       </Text>
-      {saldo !== null && <Text style={styles.saldoTexto}>Seu saldo atual: {formatarPreco(saldo)}</Text>}
 
       {mensagemSucesso ? <Text style={styles.sucesso}>{mensagemSucesso}</Text> : null}
       {erro ? <Text style={styles.erro}>{erro}</Text> : null}
@@ -122,66 +108,35 @@ export default function DoarCorridaScreen() {
       </View>
 
       {destinatario && (
-        <View style={{ gap: 16 }}>
-          <View style={styles.cartao}>
-            <Text style={styles.cartaoTitulo}>
-              Doar pra <Text style={{ fontWeight: '700' }}>{destinatario.nome}</Text> ({destinatario.email}) usando o{' '}
-              <Text style={{ fontWeight: '700' }}>saldo da carteira</Text>:
-            </Text>
+        <View style={styles.cartao}>
+          <Text style={styles.cartaoTitulo}>
+            Doar pra <Text style={{ fontWeight: '700' }}>{destinatario.nome}</Text> ({destinatario.email}):
+          </Text>
 
-            <View style={styles.grade}>
-              {catalogo.map((item) => {
-                const faixa = obterFaixa(item.faixa)
-                const chave = `carteira-${item.faixa}`
+          {pacotesDisponiveis.length === 0 ? (
+            <Text style={styles.dica}>Você não tem pacotes com corridas disponíveis pra doar.</Text>
+          ) : (
+            <View style={{ gap: 8 }}>
+              {pacotesDisponiveis.map((pacote) => {
+                const faixa = obterFaixa(pacote.faixa)
                 return (
-                  <Pressable
-                    key={chave}
-                    disabled={doando !== null}
-                    onPress={() => handleDoar(item.faixa, null, chave)}
-                    style={[styles.opcaoFaixa, { backgroundColor: faixa.hex }, doando !== null && styles.desabilitado]}
-                  >
-                    <Text style={[styles.opcaoFaixaNome, { color: faixa.textoClaro ? '#1f2937' : cores.branco }]}>
-                      {faixa.nome}
-                    </Text>
-                    <Text style={[styles.opcaoFaixaPreco, { color: faixa.textoClaro ? '#1f2937' : cores.branco }]}>
-                      {doando === chave ? 'Doando...' : formatarPreco(item.precoAvulso)}
-                    </Text>
-                  </Pressable>
+                  <View key={pacote.id} style={styles.linhaPacote}>
+                    <View style={styles.linhaEsquerda}>
+                      <View style={[styles.bolinha, { backgroundColor: faixa.hex }]} />
+                      <Text style={styles.linhaPacoteTexto}>
+                        {faixa.nome} — {pacote.quantidadeRestante} corrida(s) restante(s)
+                      </Text>
+                    </View>
+                    <Pressable
+                      disabled={doando !== null}
+                      onPress={() => handleDoar(pacote.faixa, pacote.id)}
+                      style={[styles.botaoPacote, doando !== null && styles.desabilitado]}
+                    >
+                      <Text style={styles.botaoPacoteTexto}>{doando === pacote.id ? 'Doando...' : 'Doar deste pacote'}</Text>
+                    </Pressable>
+                  </View>
                 )
               })}
-            </View>
-          </View>
-
-          {pacotesDisponiveis.length > 0 && (
-            <View style={styles.cartao}>
-              <Text style={styles.cartaoTitulo}>
-                Ou doar <Text style={{ fontWeight: '700' }}>de um pacote que você já tem</Text> (não cobra de
-                novo, só usa 1 corrida do pacote):
-              </Text>
-
-              <View style={{ gap: 8, marginTop: 4 }}>
-                {pacotesDisponiveis.map((pacote) => {
-                  const faixa = obterFaixa(pacote.faixa)
-                  const chave = `pacote-${pacote.id}`
-                  return (
-                    <View key={pacote.id} style={styles.linhaPacote}>
-                      <View style={styles.linhaEsquerda}>
-                        <View style={[styles.bolinha, { backgroundColor: faixa.hex }]} />
-                        <Text style={styles.linhaPacoteTexto}>
-                          {faixa.nome} — {pacote.quantidadeRestante} corrida(s) restante(s)
-                        </Text>
-                      </View>
-                      <Pressable
-                        disabled={doando !== null}
-                        onPress={() => handleDoar(pacote.faixa, pacote.id, chave)}
-                        style={[styles.botaoPacote, doando !== null && styles.desabilitado]}
-                      >
-                        <Text style={styles.botaoPacoteTexto}>{doando === chave ? 'Doando...' : 'Doar deste pacote'}</Text>
-                      </Pressable>
-                    </View>
-                  )
-                })}
-              </View>
             </View>
           )}
         </View>
@@ -203,10 +158,6 @@ function criarEstilos(cores: Cores) {
   },
   descricao: {
     fontSize: 13,
-    color: cores.textoSecundario,
-  },
-  saldoTexto: {
-    fontSize: 12,
     color: cores.textoSecundario,
   },
   sucesso: {
@@ -261,30 +212,16 @@ function criarEstilos(cores: Cores) {
     backgroundColor: cores.cartao,
     borderRadius: 16,
     padding: 16,
+    gap: 8,
   },
   cartaoTitulo: {
     fontSize: 13,
     color: cores.texto,
-    marginBottom: 12,
+    marginBottom: 4,
   },
-  grade: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  opcaoFaixa: {
-    width: '31%',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    gap: 2,
-  },
-  opcaoFaixaNome: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  opcaoFaixaPreco: {
+  dica: {
     fontSize: 12,
+    color: cores.textoSecundario,
   },
   linhaPacote: {
     flexDirection: 'row',

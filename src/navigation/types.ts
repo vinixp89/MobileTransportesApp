@@ -9,7 +9,6 @@ export type RootStackParamList = {
   Pacotes: undefined
   Planos: undefined
   SaldoCorrida: undefined
-  Carteira: undefined
   DoarCorrida: undefined
   Notificacoes: undefined
   SobreApp: undefined

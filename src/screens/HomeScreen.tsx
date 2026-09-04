@@ -133,7 +133,7 @@ export default function HomeScreen({ navigation }: Props) {
         style={({ pressed }) => [styles.card, { backgroundColor: '#ec4899' }, pressed && styles.cardPressionado]}
       >
         <Text style={styles.cardTitulo}>Doar corrida</Text>
-        <Text style={styles.cardTexto}>Presenteie outra pessoa com uma corrida — sai do seu saldo em reais.</Text>
+        <Text style={styles.cardTexto}>Presenteie outra pessoa com uma corrida de um pacote que você já tem.</Text>
       </Pressable>
 
       <Pressable
@@ -144,23 +144,13 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.cardClaroTexto}>Veja suas corridas anteriores.</Text>
       </Pressable>
 
-      <View style={styles.linhaSaldos}>
-        <Pressable
-          onPress={() => navigation.navigate('SaldoCorrida')}
-          style={({ pressed }) => [styles.cardClaro, styles.cardMetade, pressed && styles.cardPressionado]}
-        >
-          <Text style={styles.cardClaroTitulo}>Saldo de corridas</Text>
-          <Text style={styles.cardClaroTexto}>Corridas de pacote disponíveis.</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => navigation.navigate('Carteira')}
-          style={({ pressed }) => [styles.cardClaro, styles.cardMetade, pressed && styles.cardPressionado]}
-        >
-          <Text style={styles.cardClaroTitulo}>Saldo em reais</Text>
-          <Text style={styles.cardClaroTexto}>Ver e recarregar carteira.</Text>
-        </Pressable>
-      </View>
+      <Pressable
+        onPress={() => navigation.navigate('SaldoCorrida')}
+        style={({ pressed }) => [styles.cardClaro, pressed && styles.cardPressionado]}
+      >
+        <Text style={styles.cardClaroTitulo}>Saldo de corridas</Text>
+        <Text style={styles.cardClaroTexto}>Corridas de pacote disponíveis.</Text>
+      </Pressable>
     </ScrollView>
   )
 }
@@ -235,13 +225,6 @@ function criarEstilos(cores: Cores) {
     backgroundColor: cores.cartao,
     borderWidth: 1,
     borderColor: cores.borda,
-  },
-  linhaSaldos: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  cardMetade: {
-    flex: 1,
   },
   cardClaroTitulo: {
     fontSize: 15,
