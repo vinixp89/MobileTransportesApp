@@ -1,10 +1,12 @@
 import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useTema } from '../context/ThemeContext'
 import type { Cores } from '../theme/colors'
+import type { RootStackParamList } from '../navigation/types'
 
-const POLITICA_PRIVACIDADE_URL = 'https://claude.ai/code/artifact/ebd321c9-4945-4b9f-9df9-9f1c06f3040a'
+type Props = NativeStackScreenProps<RootStackParamList, 'SobreApp'>
 
-export default function SobreAppScreen() {
+export default function SobreAppScreen({ navigation }: Props) {
   const { cores } = useTema()
   const styles = criarEstilos(cores)
 
@@ -22,7 +24,7 @@ export default function SobreAppScreen() {
       </Text>
 
       <View style={styles.lista}>
-        <Pressable onPress={() => Linking.openURL(POLITICA_PRIVACIDADE_URL)} style={styles.linha}>
+        <Pressable onPress={() => navigation.navigate('PoliticaPrivacidade')} style={styles.linha}>
           <Text style={styles.linhaTexto}>Política de privacidade</Text>
           <Text style={styles.linhaSeta}>›</Text>
         </Pressable>

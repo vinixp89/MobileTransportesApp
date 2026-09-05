@@ -13,4 +13,5 @@ export type RootStackParamList = {
   Notificacoes: undefined
   SobreApp: undefined
   ConfiguracoesConta: undefined
+  PoliticaPrivacidade: undefined
 }

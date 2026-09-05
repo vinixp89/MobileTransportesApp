@@ -17,6 +17,7 @@ import DoarCorridaScreen from '../screens/DoarCorridaScreen'
 import NotificacoesScreen from '../screens/NotificacoesScreen'
 import SobreAppScreen from '../screens/SobreAppScreen'
 import ConfiguracoesContaScreen from '../screens/ConfiguracoesContaScreen'
+import PoliticaPrivacidadeScreen from '../screens/PoliticaPrivacidadeScreen'
 import type { RootStackParamList } from './types'
 
 const Stack = createNativeStackNavigator<RootStackParamList>()
@@ -56,6 +57,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Notificacoes" component={NotificacoesScreen} options={{ title: 'Caixa de entrada' }} />
           <Stack.Screen name="SobreApp" component={SobreAppScreen} options={{ title: 'Sobre o app' }} />
           <Stack.Screen name="ConfiguracoesConta" component={ConfiguracoesContaScreen} options={{ title: 'Configurações da conta' }} />
+          <Stack.Screen name="PoliticaPrivacidade" component={PoliticaPrivacidadeScreen} options={{ title: 'Política de privacidade' }} />
         </>
       ) : (
         <>
