@@ -33,6 +33,12 @@ type Props = {
   erro: string
   bloqueado?: boolean
   gratisPlano?: boolean
+  // Corrida avulsa tem 2 formas de pagar (ver PedirCorridaScreen) — onConfirmar continua sendo
+  // cartão/boleto (Checkout Pro, com redirecionamento), onConfirmarPix é o Pix direto (QR Code na
+  // hora, sem sair do app).
+  avulsa?: boolean
+  onConfirmarPix?: () => void
+  confirmandoPix?: boolean
 }
 
 // Cartão de confirmação/status da corrida — mesmo layout do RideConfirmCard.jsx da web (selo por
@@ -46,6 +52,9 @@ export default function RideConfirmCard({
   erro,
   bloqueado = false,
   gratisPlano = false,
+  avulsa = false,
+  onConfirmarPix,
+  confirmandoPix = false,
 }: Props) {
   const { cores } = useTema()
   const styles = criarEstilos(cores)
@@ -106,7 +115,41 @@ export default function RideConfirmCard({
       {erro ? <Text style={styles.erroTexto}>{erro}</Text> : null}
 
       <View style={styles.rodape}>
-        {modo === 'confirmando' ? (
+        {modo === 'confirmando' && avulsa ? (
+          <View style={{ gap: 10 }}>
+            <Pressable
+              onPress={onConfirmarPix}
+              disabled={confirmando || confirmandoPix || bloqueado}
+              style={[
+                styles.botaoConfirmar,
+                { backgroundColor: faixa.hex },
+                (confirmando || confirmandoPix || bloqueado) && styles.desabilitado,
+              ]}
+            >
+              {confirmandoPix ? (
+                <ActivityIndicator color={cores.branco} />
+              ) : (
+                <Text style={styles.botaoConfirmarTexto}>Pagar com Pix</Text>
+              )}
+            </Pressable>
+            <View style={styles.botoes}>
+              <Pressable onPress={onCancelar} style={styles.botaoVoltar}>
+                <Text style={styles.botaoVoltarTexto}>Voltar</Text>
+              </Pressable>
+              <Pressable
+                onPress={onConfirmar}
+                disabled={confirmando || confirmandoPix || bloqueado}
+                style={[styles.botaoVoltar, (confirmando || confirmandoPix || bloqueado) && styles.desabilitado]}
+              >
+                {confirmando ? (
+                  <ActivityIndicator color={cores.texto} />
+                ) : (
+                  <Text style={styles.botaoVoltarTexto}>Cartão / Boleto</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        ) : modo === 'confirmando' ? (
           <View style={styles.botoes}>
             <Pressable onPress={onCancelar} style={styles.botaoVoltar}>
               <Text style={styles.botaoVoltarTexto}>Voltar</Text>

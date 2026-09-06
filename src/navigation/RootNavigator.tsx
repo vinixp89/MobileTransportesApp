@@ -9,6 +9,7 @@ import EsqueciSenhaScreen from '../screens/EsqueciSenhaScreen'
 import HomeScreen from '../screens/HomeScreen'
 import PedirCorridaScreen from '../screens/PedirCorridaScreen'
 import AcompanharCorridaScreen from '../screens/AcompanharCorridaScreen'
+import PagamentoPixScreen from '../screens/PagamentoPixScreen'
 import HistoricoScreen from '../screens/HistoricoScreen'
 import PacotesScreen from '../screens/PacotesScreen'
 import PlanosScreen from '../screens/PlanosScreen'
@@ -49,6 +50,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="PedirCorrida" component={PedirCorridaScreen} options={{ title: 'Pedir corrida' }} />
           <Stack.Screen name="AcompanharCorrida" component={AcompanharCorridaScreen} options={{ title: 'Acompanhar corrida' }} />
+          <Stack.Screen name="PagamentoPix" component={PagamentoPixScreen} options={{ title: 'Pagar com Pix' }} />
           <Stack.Screen name="Historico" component={HistoricoScreen} options={{ title: 'Histórico de corridas' }} />
           <Stack.Screen name="Pacotes" component={PacotesScreen} options={{ title: 'Pacote de corrida' }} />
           <Stack.Screen name="Planos" component={PlanosScreen} options={{ title: 'Planos' }} />

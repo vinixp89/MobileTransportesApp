@@ -59,6 +59,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
 
   const [estimando, setEstimando] = useState(false)
   const [confirmando, setConfirmando] = useState(false)
+  const [confirmandoPix, setConfirmandoPix] = useState(false)
   const [erro, setErro] = useState('')
   const [estimativa, setEstimativa] = useState<Estimativa | null>(null)
 
@@ -153,6 +154,24 @@ export default function PedirCorridaScreen({ navigation }: Props) {
     }
   }
 
+  async function handleConfirmarPix() {
+    setErro('')
+    setConfirmandoPix(true)
+
+    try {
+      const { data } = await api.post('/Corridas/avulsa-pix', { origem, destino, tipoConsumo, pacoteCorridasId: null })
+      navigation.replace('PagamentoPix', {
+        corridaId: data.corridaId,
+        pagamentoGatewayId: data.pagamentoGatewayId,
+        qrCodeCopiaCola: data.qrCodeCopiaCola,
+        qrCodeBase64: data.qrCodeBase64,
+      })
+    } catch (error) {
+      setErro(extrairMensagemErro(error))
+      setConfirmandoPix(false)
+    }
+  }
+
   return (
     <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo} keyboardShouldPersistTaps="handled">
       {etapa === 'form' && (
@@ -164,7 +183,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
             <Text style={styles.legend}>Forma de pagamento</Text>
 
             <OpcaoPagamento
-              label="Corrida avulsa (pagar agora via Mercado Pago)"
+              label="Corrida avulsa (pagar agora — Pix, cartão ou boleto)"
               selecionado={tipoConsumo === TIPO_CONSUMO.AVULSA}
               onPress={() => setTipoConsumo(TIPO_CONSUMO.AVULSA)}
             />
@@ -237,6 +256,9 @@ export default function PedirCorridaScreen({ navigation }: Props) {
           erro={erro || erroFaixaPacote || erroFaixaBeneficio}
           bloqueado={Boolean(erroFaixaPacote || erroFaixaBeneficio)}
           gratisPlano={tipoConsumo === TIPO_CONSUMO.BENEFICIO}
+          avulsa={tipoConsumo === TIPO_CONSUMO.AVULSA}
+          onConfirmarPix={handleConfirmarPix}
+          confirmandoPix={confirmandoPix}
         />
       )}
     </ScrollView>
