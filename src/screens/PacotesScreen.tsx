@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import * as WebBrowser from 'expo-web-browser'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import api, { extrairMensagemErro } from '../api/client'
 import { obterFaixa, formatarPreco } from '../constants/faixas'
 import { useTema } from '../context/ThemeContext'
 import type { Cores } from '../theme/colors'
+import type { RootStackParamList } from '../navigation/types'
 
 type Tamanho = { quantidade: number; preco: number }
 type ItemCatalogo = { faixa: number; precoAvulso: number; tamanhos: Tamanho[] }
@@ -11,7 +14,9 @@ type Assinatura = { nomePlano: string; status: number; percentualDescontoPacotes
 
 const STATUS_ATIVA = 1
 
-export default function PacotesScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, 'Pacotes'>
+
+export default function PacotesScreen({ navigation }: Props) {
   const { cores } = useTema()
   const styles = criarEstilos(cores)
   const [catalogo, setCatalogo] = useState<ItemCatalogo[]>([])
@@ -19,7 +24,9 @@ export default function PacotesScreen() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [comprando, setComprando] = useState('')
-  const [mensagemSucesso, setMensagemSucesso] = useState('')
+  // Item que o cliente tocou, esperando ele escolher Pix ou cartão/boleto (ver OpcaoPagamento
+  // abaixo) — null quando nenhum está selecionado.
+  const [selecionado, setSelecionado] = useState('')
 
   // Desconto do plano ativo (ver PlanoAssinatura.PercentualDescontoPacotes no backend) — só mostra
   // preço com desconto aqui na tela; quem calcula e cobra de verdade é o backend na hora da compra
@@ -41,16 +48,36 @@ export default function PacotesScreen() {
       .catch(() => {})
   }, [])
 
-  async function handleComprar(faixaValor: number, quantidade: number) {
+  async function handleComprarPix(faixaValor: number, quantidade: number) {
     const chave = `${faixaValor}-${quantidade}`
     setComprando(chave)
     setErro('')
-    setMensagemSucesso('')
 
     try {
-      await api.post('/PacotesCorridas', { faixa: faixaValor, quantidade })
-      const faixa = obterFaixa(faixaValor)
-      setMensagemSucesso(`Pacote de ${quantidade} corridas ${faixa.nome} comprado com sucesso!`)
+      const { data } = await api.post('/PacotesCorridas/comprar-pix', { faixa: faixaValor, quantidade })
+      setSelecionado('')
+      navigation.navigate('PagamentoPix', {
+        pagamentoGatewayId: data.pagamentoGatewayId,
+        qrCodeCopiaCola: data.qrCodeCopiaCola,
+        qrCodeBase64: data.qrCodeBase64,
+        aoAprovar: { tipo: 'pacote' },
+      })
+    } catch (error) {
+      setErro(extrairMensagemErro(error))
+    } finally {
+      setComprando('')
+    }
+  }
+
+  async function handleComprarCartaoBoleto(faixaValor: number, quantidade: number) {
+    const chave = `${faixaValor}-${quantidade}`
+    setComprando(chave)
+    setErro('')
+
+    try {
+      const { data } = await api.post('/PacotesCorridas/comprar', { faixa: faixaValor, quantidade })
+      setSelecionado('')
+      await WebBrowser.openBrowserAsync(data.checkoutUrl)
     } catch (error) {
       setErro(extrairMensagemErro(error))
     } finally {
@@ -71,12 +98,6 @@ export default function PacotesScreen() {
           <Text style={styles.descontoTexto}>
             🎉 Seu plano {assinatura?.nomePlano} dá {Math.round(percentualDesconto * 100)}% de desconto nos pacotes — já aplicado nos preços abaixo.
           </Text>
-        </View>
-      ) : null}
-
-      {mensagemSucesso ? (
-        <View style={styles.sucessoCaixa}>
-          <Text style={styles.sucessoTexto}>{mensagemSucesso}</Text>
         </View>
       ) : null}
 
@@ -103,8 +124,12 @@ export default function PacotesScreen() {
                     <Pressable
                       key={chave}
                       disabled={comprando === chave}
-                      onPress={() => handleComprar(item.faixa, tamanho.quantidade)}
-                      style={[styles.tamanhoBotao, comprando === chave && styles.desabilitado]}
+                      onPress={() => setSelecionado((atual) => (atual === chave ? '' : chave))}
+                      style={[
+                        styles.tamanhoBotao,
+                        comprando === chave && styles.desabilitado,
+                        selecionado === chave && styles.tamanhoBotaoSelecionado,
+                      ]}
                     >
                       <Text style={[styles.tamanhoQtd, faixa.textoClaro && styles.textoEscuro]}>
                         {tamanho.quantidade} corridas
@@ -129,6 +154,29 @@ export default function PacotesScreen() {
                   )
                 })}
               </View>
+
+              {item.tamanhos.some((t) => `${item.faixa}-${t.quantidade}` === selecionado) && (
+                <View style={styles.formaPagamentoLinha}>
+                  <Pressable
+                    onPress={() => {
+                      const [, quantidade] = selecionado.split('-')
+                      handleComprarPix(item.faixa, Number(quantidade))
+                    }}
+                    style={styles.formaPagamentoBotao}
+                  >
+                    <Text style={styles.formaPagamentoTexto}>Pagar com Pix</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      const [, quantidade] = selecionado.split('-')
+                      handleComprarCartaoBoleto(item.faixa, Number(quantidade))
+                    }}
+                    style={[styles.formaPagamentoBotao, styles.formaPagamentoBotaoSecundario]}
+                  >
+                    <Text style={[styles.formaPagamentoTexto, faixa.textoClaro && styles.textoEscuro]}>Cartão / Boleto</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
           )
         })}
@@ -223,6 +271,33 @@ function criarEstilos(cores: Cores) {
     paddingVertical: 12,
     alignItems: 'center',
     gap: 4,
+  },
+  tamanhoBotaoSelecionado: {
+    borderColor: cores.branco,
+    borderWidth: 2,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  formaPagamentoLinha: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  formaPagamentoBotao: {
+    flex: 1,
+    backgroundColor: cores.branco,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  formaPagamentoBotaoSecundario: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+  },
+  formaPagamentoTexto: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: cores.primaria,
   },
   desabilitado: {
     opacity: 0.5,

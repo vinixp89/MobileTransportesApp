@@ -161,10 +161,10 @@ export default function PedirCorridaScreen({ navigation }: Props) {
     try {
       const { data } = await api.post('/Corridas/avulsa-pix', { origem, destino, tipoConsumo, pacoteCorridasId: null })
       navigation.replace('PagamentoPix', {
-        corridaId: data.corridaId,
         pagamentoGatewayId: data.pagamentoGatewayId,
         qrCodeCopiaCola: data.qrCodeCopiaCola,
         qrCodeBase64: data.qrCodeBase64,
+        aoAprovar: { tipo: 'corrida', corridaId: data.corridaId },
       })
     } catch (error) {
       setErro(extrairMensagemErro(error))

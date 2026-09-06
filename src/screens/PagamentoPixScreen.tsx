@@ -17,7 +17,8 @@ const INTERVALO_MS = 4000
 // /Pagamentos/sincronizar/{id} até o pagamento ser confirmado, e só aí libera a corrida pro
 // motorista ver (ver PagamentoService.AplicarEfeitoCorridaAvulsaAsync).
 export default function PagamentoPixScreen({ route, navigation }: Props) {
-  const { corridaId, pagamentoGatewayId, qrCodeCopiaCola, qrCodeBase64 } = route.params
+  const { pagamentoGatewayId, qrCodeCopiaCola, qrCodeBase64, aoAprovar } = route.params
+  const telaDesistir = aoAprovar.tipo === 'corrida' ? 'PedirCorrida' : 'Pacotes'
   const { cores } = useTema()
   const styles = criarEstilos(cores)
 
@@ -33,7 +34,11 @@ export default function PagamentoPixScreen({ route, navigation }: Props) {
 
       if (data.status === STATUS_PAGAMENTO.APROVADO) {
         if (intervaloRef.current) clearInterval(intervaloRef.current)
-        navigation.replace('AcompanharCorrida', { corridaId })
+        if (aoAprovar.tipo === 'corrida') {
+          navigation.replace('AcompanharCorrida', { corridaId: aoAprovar.corridaId })
+        } else {
+          navigation.replace('Pacotes')
+        }
       } else if (data.status === STATUS_PAGAMENTO.RECUSADO || data.status === STATUS_PAGAMENTO.CANCELADO) {
         if (intervaloRef.current) clearInterval(intervaloRef.current)
       }
@@ -41,7 +46,7 @@ export default function PagamentoPixScreen({ route, navigation }: Props) {
       // Falha pontual de rede no polling não é motivo pra parar de tentar — só ignora e tenta de
       // novo no próximo intervalo.
     }
-  }, [pagamentoGatewayId, corridaId, navigation])
+  }, [pagamentoGatewayId, aoAprovar, navigation])
 
   useEffect(() => {
     sincronizar()
@@ -107,7 +112,7 @@ export default function PagamentoPixScreen({ route, navigation }: Props) {
       </Text>
 
       {finalizado && (
-        <Pressable onPress={() => navigation.replace('PedirCorrida')} style={styles.botaoVoltar}>
+        <Pressable onPress={() => navigation.replace(telaDesistir)} style={styles.botaoVoltar}>
           <Text style={styles.botaoVoltarTexto}>Voltar e tentar de novo</Text>
         </Pressable>
       )}

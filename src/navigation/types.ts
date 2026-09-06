@@ -5,7 +5,14 @@ export type RootStackParamList = {
   Home: undefined
   PedirCorrida: undefined
   AcompanharCorrida: { corridaId: string }
-  PagamentoPix: { corridaId: string; pagamentoGatewayId: string; qrCodeCopiaCola: string; qrCodeBase64: string }
+  PagamentoPix: {
+    pagamentoGatewayId: string
+    qrCodeCopiaCola: string
+    qrCodeBase64: string
+    // Pra onde ir quando o pagamento aprovar (ou o cliente desistir) — varia conforme o que está
+    // sendo pago (corrida avulsa ou pacote de corridas), ver PagamentoPixScreen.
+    aoAprovar: { tipo: 'corrida'; corridaId: string } | { tipo: 'pacote' }
+  }
   Historico: undefined
   Pacotes: undefined
   Planos: undefined
