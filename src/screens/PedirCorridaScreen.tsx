@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import api, { extrairMensagemErro } from '../api/client'
 import EnderecoFields, { enderecoVazio, type Endereco } from '../components/EnderecoFields'
-import RideConfirmCard, { type Estimativa } from '../components/RideConfirmCard'
+import RideConfirmCard, { CATEGORIA, type Estimativa } from '../components/RideConfirmCard'
 import { obterFaixa } from '../constants/faixas'
 import { useOrigemAutomatica } from '../hooks/useOrigemAutomatica'
 import { useTema } from '../context/ThemeContext'
@@ -53,6 +53,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [origemAutomatica])
   const [tipoConsumo, setTipoConsumo] = useState<number>(TIPO_CONSUMO.AVULSA)
+  const [categoria, setCategoria] = useState<number>(CATEGORIA.NORMAL)
   const [pacotes, setPacotes] = useState<Pacote[]>([])
   const [pacoteCorridasId, setPacoteCorridasId] = useState('')
   const [beneficio, setBeneficio] = useState<Beneficio | null>(null)
@@ -62,6 +63,15 @@ export default function PedirCorridaScreen({ navigation }: Props) {
   const [confirmandoPix, setConfirmandoPix] = useState(false)
   const [erro, setErro] = useState('')
   const [estimativa, setEstimativa] = useState<Estimativa | null>(null)
+
+  // Categoria Executivo só existe como corrida avulsa por enquanto (ver CorridaService.CriarAsync
+  // no backend) — trava a forma de pagamento em avulsa automaticamente pra não deixar o cliente
+  // escolher uma combinação que o backend vai recusar.
+  useEffect(() => {
+    if (categoria === CATEGORIA.EXECUTIVO && tipoConsumo !== TIPO_CONSUMO.AVULSA) {
+      setTipoConsumo(TIPO_CONSUMO.AVULSA)
+    }
+  }, [categoria, tipoConsumo])
 
   useEffect(() => {
     if (tipoConsumo !== TIPO_CONSUMO.PACOTE) return
@@ -114,6 +124,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
     try {
       const { data } = await api.post('/Corridas/estimar', { origem, destino })
       setEstimativa(data)
+      setCategoria(CATEGORIA.NORMAL)
       setEtapa('confirmando')
     } catch (error) {
       console.error('[DEBUG estimar]', error)
@@ -132,7 +143,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
       // Pago pelo valor exato dela, e só cria/libera a corrida de verdade quando o pagamento for
       // confirmado do outro lado (ver PagamentoService no backend).
       if (tipoConsumo === TIPO_CONSUMO.AVULSA) {
-        const { data } = await api.post('/Corridas/avulsa', { origem, destino, tipoConsumo, pacoteCorridasId: null })
+        const { data } = await api.post('/Corridas/avulsa', { origem, destino, tipoConsumo, pacoteCorridasId: null, categoria })
         await WebBrowser.openBrowserAsync(data.checkoutUrl)
         navigation.replace('AcompanharCorrida', { corridaId: data.corridaId })
         return
@@ -143,6 +154,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
         destino,
         tipoConsumo,
         pacoteCorridasId: tipoConsumo === TIPO_CONSUMO.PACOTE ? pacoteCorridasId : null,
+        categoria,
       })
 
       // Daqui pra frente quem cuida do status da corrida (motorista aceitar, se deslocar até o
@@ -159,7 +171,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
     setConfirmandoPix(true)
 
     try {
-      const { data } = await api.post('/Corridas/avulsa-pix', { origem, destino, tipoConsumo, pacoteCorridasId: null })
+      const { data } = await api.post('/Corridas/avulsa-pix', { origem, destino, tipoConsumo, pacoteCorridasId: null, categoria })
       navigation.replace('PagamentoPix', {
         pagamentoGatewayId: data.pagamentoGatewayId,
         qrCodeCopiaCola: data.qrCodeCopiaCola,
@@ -228,6 +240,11 @@ export default function PedirCorridaScreen({ navigation }: Props) {
                 )}
               </View>
             )}
+
+            <Text style={styles.dica}>
+              A categoria Executivo (veículo até 3 anos, sedan médio ou SUV) só vale pra corrida avulsa —
+              você escolhe a categoria na próxima tela, depois de ver os dois preços.
+            </Text>
           </View>
 
           {erro ? <Text style={styles.erro}>{erro}</Text> : null}
@@ -250,12 +267,14 @@ export default function PedirCorridaScreen({ navigation }: Props) {
         <RideConfirmCard
           estimativa={estimativa}
           modo={etapa}
+          categoria={categoria}
+          onCategoriaChange={setCategoria}
           onConfirmar={handleConfirmar}
           onCancelar={() => setEtapa('form')}
           confirmando={confirmando}
           erro={erro || erroFaixaPacote || erroFaixaBeneficio}
           bloqueado={Boolean(erroFaixaPacote || erroFaixaBeneficio)}
-          gratisPlano={tipoConsumo === TIPO_CONSUMO.BENEFICIO}
+          gratisPlano={tipoConsumo === TIPO_CONSUMO.BENEFICIO && categoria === CATEGORIA.NORMAL}
           avulsa={tipoConsumo === TIPO_CONSUMO.AVULSA}
           onConfirmarPix={handleConfirmarPix}
           confirmandoPix={confirmandoPix}

@@ -14,19 +14,24 @@ type EnderecoResolvido = {
   longitude: number
 }
 
+export const CATEGORIA = { NORMAL: 0, EXECUTIVO: 1 } as const
+
 export type Estimativa = {
   origem: EnderecoResolvido
   destino: EnderecoResolvido
   distanciaEstimadaKm: number
   duracaoEstimadaMinutos: number | null
   faixa: number
-  valorReferencia: number
+  valorReferenciaNormal: number
+  valorReferenciaExecutivo: number
   avisosEndereco?: string[] | null
 }
 
 type Props = {
   estimativa: Estimativa
   modo: 'confirmando' | 'confirmado'
+  categoria?: number
+  onCategoriaChange?: (categoria: number) => void
   onConfirmar: () => void
   onCancelar: () => void
   confirmando: boolean
@@ -42,10 +47,12 @@ type Props = {
 }
 
 // Cartão de confirmação/status da corrida — mesmo layout do RideConfirmCard.jsx da web (selo por
-// faixa, endereços, mapa, valor).
+// faixa, endereços, mapa, valor Normal/Executivo lado a lado pra comparar).
 export default function RideConfirmCard({
   estimativa,
   modo,
+  categoria = CATEGORIA.NORMAL,
+  onCategoriaChange,
   onConfirmar,
   onCancelar,
   confirmando,
@@ -60,6 +67,7 @@ export default function RideConfirmCard({
   const styles = criarEstilos(cores)
   const faixa = obterFaixa(estimativa.faixa)
   const duracao = formatarDuracao(estimativa.duracaoEstimadaMinutos)
+  const valorEscolhido = categoria === CATEGORIA.EXECUTIVO ? estimativa.valorReferenciaExecutivo : estimativa.valorReferenciaNormal
 
   return (
     <View style={[styles.card, { borderLeftColor: faixa.hex }]}>
@@ -92,17 +100,49 @@ export default function RideConfirmCard({
         <RideMap origem={estimativa.origem} destino={estimativa.destino} corHex={faixa.hex} />
       </View>
 
-      <View style={styles.resumo}>
-        <Text style={styles.subtexto}>
-          {estimativa.distanciaEstimadaKm.toFixed(1)} km{duracao ? ` · ${duracao}` : ''}
-        </Text>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[styles.valor, { color: faixa.hex }]}>
-            {gratisPlano ? 'Grátis' : formatarPreco(estimativa.valorReferencia)}
-          </Text>
-          {gratisPlano && <Text style={styles.subtexto}>Benefício do plano</Text>}
+      <Text style={[styles.subtexto, { paddingHorizontal: 20, marginTop: 16 }]}>
+        {estimativa.distanciaEstimadaKm.toFixed(1)} km{duracao ? ` · ${duracao}` : ''}
+      </Text>
+
+      {modo === 'confirmando' && onCategoriaChange ? (
+        <View style={styles.opcoesCategoria}>
+          <Pressable
+            onPress={() => onCategoriaChange(CATEGORIA.NORMAL)}
+            style={[
+              styles.tileCategoria,
+              categoria === CATEGORIA.NORMAL ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
+            ]}
+          >
+            <Text style={styles.tileCategoriaLabel}>Normal</Text>
+            <Text style={[styles.tileCategoriaValor, { color: faixa.hex }]}>
+              {gratisPlano ? 'Grátis' : formatarPreco(estimativa.valorReferenciaNormal)}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => onCategoriaChange(CATEGORIA.EXECUTIVO)}
+            style={[
+              styles.tileCategoria,
+              categoria === CATEGORIA.EXECUTIVO ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
+            ]}
+          >
+            <Text style={styles.tileCategoriaLabel}>Executivo</Text>
+            <Text style={[styles.tileCategoriaValor, { color: faixa.hex }]}>
+              {formatarPreco(estimativa.valorReferenciaExecutivo)}
+            </Text>
+          </Pressable>
         </View>
-      </View>
+      ) : (
+        <View style={[styles.resumo, { justifyContent: 'flex-end' }]}>
+          <Text style={[styles.valor, { color: faixa.hex }]}>{gratisPlano ? 'Grátis' : formatarPreco(valorEscolhido)}</Text>
+        </View>
+      )}
+
+      {modo === 'confirmando' && categoria === CATEGORIA.EXECUTIVO && (
+        <Text style={[styles.subtexto, { paddingHorizontal: 20, marginTop: 8 }]}>
+          Veículo até 3 anos, sedan médio ou SUV — só disponível como corrida avulsa.
+        </Text>
+      )}
 
       {estimativa.avisosEndereco && estimativa.avisosEndereco.length > 0 && (
         <View style={styles.avisoCaixa}>
@@ -256,6 +296,34 @@ function criarEstilos(cores: Cores) {
   },
   valor: {
     fontSize: 20,
+    fontWeight: '800',
+  },
+  opcoesCategoria: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    marginTop: 12,
+  },
+  tileCategoria: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: cores.cartao,
+  },
+  tileCategoriaInativo: {
+    borderColor: 'transparent',
+    backgroundColor: cores.fundo,
+  },
+  tileCategoriaLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    color: cores.textoSecundario,
+  },
+  tileCategoriaValor: {
+    marginTop: 2,
+    fontSize: 17,
     fontWeight: '800',
   },
   avisoCaixa: {
