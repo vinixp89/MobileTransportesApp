@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Home: undefined
   PedirCorrida: undefined
   AcompanharCorrida: { corridaId: string }
+  ChatCorrida: { corridaId: string }
   PagamentoPix: {
     pagamentoGatewayId: string
     qrCodeCopiaCola: string

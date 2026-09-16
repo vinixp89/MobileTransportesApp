@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import api, { extrairMensagemErro } from '../api/client'
+import { lerToken } from '../api/tokenStorage'
 import RideMap from '../components/RideMap'
 import NavegacaoFlutuante from '../components/NavegacaoFlutuante'
+import AvaliacaoForm, { TIPO_USUARIO } from '../components/AvaliacaoForm'
 import { obterFaixa, formatarPreco } from '../constants/faixas'
 import {
   obterStatusLabel,
   STATUS_CONFIRMADA,
+  STATUS_EM_ANDAMENTO,
   STATUS_FINALIZADA,
   STATUS_CANCELADA,
   STATUS_AGUARDANDO_PAGAMENTO,
@@ -27,9 +30,40 @@ type LocalizacaoMotorista = {
   modeloVeiculo: string
 }
 
+type MotoristaDaCorrida = {
+  placaVeiculo: string
+  modeloVeiculo: string
+  avaliacaoMedia: number
+  temFoto: boolean
+}
+
 const STATUS_FINAIS = [STATUS_FINALIZADA, STATUS_CANCELADA]
 const STATUS_COM_MOTORISTA = [1, 2, 3]
+const STATUS_COM_CHAT = [STATUS_CONFIRMADA, STATUS_EM_ANDAMENTO]
 const INTERVALO_MS = 4000
+
+// Foto do motorista exige o token JWT no header — <Image> não manda cookie nenhum, então busca com
+// headers explícitos (suportado a partir do RN mais recente) em vez de um <img src> comum.
+function FotoMotorista({ corridaId, corHex }: { corridaId: string; corHex: string }) {
+  const [token, setToken] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelado = false
+    lerToken().then((t) => !cancelado && setToken(t))
+    return () => {
+      cancelado = true
+    }
+  }, [])
+
+  if (!token || !api.defaults.baseURL) return null
+
+  return (
+    <Image
+      source={{ uri: `${api.defaults.baseURL}/Corridas/${corridaId}/motorista/foto`, headers: { Authorization: `Bearer ${token}` } }}
+      style={{ width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: corHex }}
+    />
+  )
+}
 
 // Espelha a AcompanharCorridaPage do front-end web: consulta o status em polling e, assim que o
 // motorista aceita, mostra o código de confirmação (uma vez) e a posição dele no mapa.
@@ -40,10 +74,12 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
 
   const [corrida, setCorrida] = useState<Corrida | null>(null)
   const [motorista, setMotorista] = useState<LocalizacaoMotorista | null>(null)
+  const [motoristaDaCorrida, setMotoristaDaCorrida] = useState<MotoristaDaCorrida | null>(null)
   const [codigo, setCodigo] = useState('')
   const [erro, setErro] = useState('')
   const [cancelando, setCancelando] = useState(false)
   const intervaloRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const motoristaDaCorridaBuscadoRef = useRef(false)
   // undefined = ainda não buscou nada; null seria um status válido (0). Só notifica em transições
   // reais — não na primeira busca, que só está "confirmando" o status já conhecido.
   const statusAnteriorRef = useRef<number | undefined>(undefined)
@@ -64,6 +100,17 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
           setCodigo(resposta.codigo)
         } catch {
           // Sem sorte agora — tenta de novo no próximo polling.
+        }
+      }
+
+      // Placa/modelo/avaliação não mudam durante a corrida — busca só uma vez, não a cada polling.
+      if (data.motoristaId && !motoristaDaCorridaBuscadoRef.current) {
+        motoristaDaCorridaBuscadoRef.current = true
+        try {
+          const { data: dadosMotorista } = await api.get<MotoristaDaCorrida>(`/Corridas/${corridaId}/motorista`)
+          setMotoristaDaCorrida(dadosMotorista)
+        } catch {
+          // Sem sorte agora — não é crítico pra tela funcionar, deixa como null.
         }
       }
 
@@ -91,8 +138,10 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
     // Reseta ao trocar de corrida (ex: banner da Home leva pra uma corrida diferente da que a
     // tela já estava mostrando) — sem isso, o status da corrida anterior "vaza" pra comparação.
     statusAnteriorRef.current = undefined
+    motoristaDaCorridaBuscadoRef.current = false
     setCorrida(null)
     setMotorista(null)
+    setMotoristaDaCorrida(null)
     setCodigo('')
   }, [corridaId])
 
@@ -182,11 +231,23 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
           <Text style={[styles.valor, { color: faixa.hex }]}>{formatarPreco(corrida.valorReferencia)}</Text>
         </View>
 
-        {motorista && (
+        {motoristaDaCorrida && (
           <View style={styles.motoristaCaixa}>
-            <Text style={styles.motoristaTexto}>
-              Motorista a caminho — {motorista.modeloVeiculo} ({motorista.placaVeiculo})
-            </Text>
+            <FotoMotorista corridaId={corridaId} corHex={faixa.hex} />
+            <View style={styles.motoristaInfo}>
+              <Text style={styles.motoristaTexto}>{motoristaDaCorrida.modeloVeiculo}</Text>
+              <Text style={styles.motoristaSubtexto}>
+                {motoristaDaCorrida.placaVeiculo} · ⭐ {motoristaDaCorrida.avaliacaoMedia.toFixed(1)}
+              </Text>
+            </View>
+            {STATUS_COM_CHAT.includes(corrida.status) && (
+              <Pressable
+                onPress={() => navigation.navigate('ChatCorrida', { corridaId })}
+                style={({ pressed }) => [styles.botaoChat, pressed && styles.botaoPressionado]}
+              >
+                <Text style={styles.botaoChatTexto}>💬 Chat</Text>
+              </Pressable>
+            )}
           </View>
         )}
 
@@ -196,6 +257,12 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
             corHex={faixa.hex}
           />
         ) : null}
+
+        {corrida.status === STATUS_FINALIZADA && (
+          <View style={styles.avaliacaoContainer}>
+            <AvaliacaoForm corridaId={corridaId} autorTipoAtual={TIPO_USUARIO.CLIENTE} titulo="Como foi sua viagem com o motorista?" />
+          </View>
+        )}
 
         {erro ? (
           <View style={styles.erroCaixa}>
@@ -352,13 +419,39 @@ function criarEstilos(cores: Cores) {
   motoristaCaixa: {
     marginTop: 14,
     backgroundColor: '#faf5ff',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  motoristaInfo: {
+    flex: 1,
   },
   motoristaTexto: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '600',
     color: '#7e22ce',
+  },
+  motoristaSubtexto: {
+    fontSize: 11,
+    color: '#7e22ce',
+    marginTop: 2,
+  },
+  botaoChat: {
+    backgroundColor: '#7e22ce',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  botaoChatTexto: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  avaliacaoContainer: {
+    marginTop: 14,
   },
   erroCaixa: {
     marginTop: 14,
