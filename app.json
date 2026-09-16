@@ -11,7 +11,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.vainaboa.cliente",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Usamos sua localização pra preencher o endereço de origem automaticamente ao pedir uma corrida."
+        "NSLocationWhenInUseUsageDescription": "Usamos sua localização pra preencher o endereço de origem automaticamente ao pedir uma corrida.",
+        "NSCameraUsageDescription": "Usamos a câmera pra tirar a selfie exigida no cadastro.",
+        "NSPhotoLibraryUsageDescription": "Usamos sua galeria pra escolher a selfie exigida no cadastro."
       }
     },
     "android": {
@@ -42,6 +44,13 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Usamos sua localização pra preencher o endereço de origem automaticamente ao pedir uma corrida."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Usamos a câmera pra tirar a selfie exigida no cadastro.",
+          "photosPermission": "Usamos sua galeria pra escolher a selfie exigida no cadastro."
         }
       ]
     ],

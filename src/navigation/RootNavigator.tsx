@@ -6,6 +6,7 @@ import ThemeToggleButton from '../components/ThemeToggleButton'
 import LoginScreen from '../screens/LoginScreen'
 import CadastroScreen from '../screens/CadastroScreen'
 import EsqueciSenhaScreen from '../screens/EsqueciSenhaScreen'
+import ConfirmarSmsScreen from '../screens/ConfirmarSmsScreen'
 import HomeScreen from '../screens/HomeScreen'
 import PedirCorridaScreen from '../screens/PedirCorridaScreen'
 import AcompanharCorridaScreen from '../screens/AcompanharCorridaScreen'
@@ -24,16 +25,22 @@ import type { RootStackParamList } from './types'
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 export default function RootNavigator() {
-  const { usuario, verificandoSessao } = useAuth()
+  const { usuario, verificandoSessao, perfil, carregandoPerfil } = useAuth()
   const { cores } = useTema()
 
-  if (verificandoSessao) {
+  // carregandoPerfil evita mostrar a Home destravada por um instante antes de saber se o telefone
+  // já foi confirmado (ver AuthContext) — mesmo spinner de verificandoSessao.
+  if (verificandoSessao || (usuario && carregandoPerfil)) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: cores.fundo }}>
         <ActivityIndicator color={cores.primaria} size="large" />
       </View>
     )
   }
+
+  // perfil null (ex: falha de rede ao buscar) não trava o app — só bloqueia quando sabemos de
+  // verdade que o telefone ainda não foi confirmado.
+  const precisaConfirmarSms = Boolean(usuario) && perfil !== null && !perfil.telefoneVerificado
 
   return (
     <Stack.Navigator
@@ -45,7 +52,9 @@ export default function RootNavigator() {
         headerRight: () => <ThemeToggleButton />,
       }}
     >
-      {usuario ? (
+      {precisaConfirmarSms ? (
+        <Stack.Screen name="ConfirmarSms" component={ConfirmarSmsScreen} options={{ headerShown: false }} />
+      ) : usuario ? (
         <>
           <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
           <Stack.Screen name="PedirCorrida" component={PedirCorridaScreen} options={{ title: 'Pedir corrida' }} />

@@ -9,6 +9,14 @@ type Usuario = {
   roles: string[]
 }
 
+// Só os campos que o app precisa pra decidir se o cadastro está completo (ver
+// RootNavigator) — espelha um subconjunto de ClienteResponse do backend.
+export type ClientePerfil = {
+  telefoneVerificado: boolean
+  termosAceitos: boolean
+  temFotoSelfie: boolean
+}
+
 export type DadosCadastroCliente = {
   nome: string
   cpf: string
@@ -25,6 +33,9 @@ type AuthContextType = {
   usuario: Usuario | null
   carregando: boolean
   verificandoSessao: boolean
+  perfil: ClientePerfil | null
+  carregandoPerfil: boolean
+  recarregarPerfil: () => Promise<void>
   login: (email: string, senha: string) => Promise<{ sucesso: boolean; mensagem?: string }>
   cadastrar: (
     email: string,
@@ -69,11 +80,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // login por um instante antes de confirmar que já tinha um token salvo.
   const [verificandoSessao, setVerificandoSessao] = useState(true)
 
+  // Perfil do Cliente (telefoneVerificado/termosAceitos/temFotoSelfie) — o RootNavigator usa isso
+  // pra travar o app na tela de confirmação por SMS até completar o cadastro (ver
+  // ConfirmarSmsScreen). carregandoPerfil começa true pra não deixar a Home aparecer um instante
+  // antes do perfil carregar, o que mostraria o app "destravado" por engano.
+  const [perfil, setPerfil] = useState<ClientePerfil | null>(null)
+  const [carregandoPerfil, setCarregandoPerfil] = useState(true)
+
+  async function carregarPerfil() {
+    setCarregandoPerfil(true)
+
+    try {
+      const { data } = await api.get<ClientePerfil>('/Clientes/meu-perfil')
+      setPerfil(data)
+    } catch {
+      setPerfil(null)
+    } finally {
+      setCarregandoPerfil(false)
+    }
+  }
+
   useEffect(() => {
     lerToken()
       .then((token) => {
-        if (!token) return
+        if (!token) {
+          setCarregandoPerfil(false)
+          return
+        }
         setUsuario(decodificarUsuario(token))
+        return carregarPerfil()
       })
       .catch(() => apagarToken())
       .finally(() => setVerificandoSessao(false))
@@ -87,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await salvarToken(data.token)
       setUsuario(decodificarUsuario(data.token))
+      await carregarPerfil()
 
       return { sucesso: true }
     } catch (error) {
@@ -104,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await salvarToken(data.token)
       setUsuario(decodificarUsuario(data.token))
+      await carregarPerfil()
 
       return { sucesso: true }
     } catch (error) {
@@ -136,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await salvarToken(data.token)
       setUsuario(decodificarUsuario(data.token))
+      await carregarPerfil()
 
       return { sucesso: true }
     } catch (error) {
@@ -148,6 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logout() {
     await apagarToken()
     setUsuario(null)
+    setPerfil(null)
   }
 
   // Anonimiza os dados da conta no backend (ver AuthController.ExcluirConta) e desloga em seguida —
@@ -172,6 +211,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         usuario,
         carregando,
         verificandoSessao,
+        perfil,
+        carregandoPerfil,
+        recarregarPerfil: carregarPerfil,
         login,
         cadastrar,
         esqueciSenha,

@@ -2,6 +2,7 @@ export type RootStackParamList = {
   Login: undefined
   Cadastro: undefined
   EsqueciSenha: undefined
+  ConfirmarSms: undefined
   Home: undefined
   PedirCorrida: undefined
   AcompanharCorrida: { corridaId: string }
