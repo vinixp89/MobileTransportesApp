@@ -12,6 +12,7 @@ type Usuario = {
 // Só os campos que o app precisa pra decidir se o cadastro está completo (ver
 // RootNavigator) — espelha um subconjunto de ClienteResponse do backend.
 export type ClientePerfil = {
+  nome: string
   telefoneVerificado: boolean
   termosAceitos: boolean
   temFotoSelfie: boolean

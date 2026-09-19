@@ -24,7 +24,7 @@ type AssinaturaResumo = { nomePlano: string; status: number }
 // quando o cliente tem alguma pendente/confirmada/em andamento — pra ele não perder o fio da
 // corrida se sair do app e voltar depois.
 export default function HomeScreen({ navigation }: Props) {
-  const { usuario } = useAuth()
+  const { usuario, perfil } = useAuth()
   const { cores } = useTema()
   const styles = criarEstilos(cores)
   const [corridaAtual, setCorridaAtual] = useState<Corrida | null>(null)
@@ -72,7 +72,7 @@ export default function HomeScreen({ navigation }: Props) {
         <View style={styles.linhaLogo}>
           <Image source={require('../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
           <View>
-            <Text style={styles.saudacao}>Olá!</Text>
+            <Text style={styles.saudacao}>Olá{perfil?.nome ? `, ${perfil.nome.split(' ')[0]}` : ''}!</Text>
             <Text style={styles.perfil}>
               Perfil: {usuario?.roles.length ? usuario.roles.join(', ') : 'sem perfil definido'}
             </Text>

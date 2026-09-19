@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import api, { extrairMensagemErro } from '../api/client'
 import { lerToken } from '../api/tokenStorage'
 import RideMap from '../components/RideMap'
@@ -31,6 +31,7 @@ type LocalizacaoMotorista = {
 }
 
 type MotoristaDaCorrida = {
+  nome: string
   placaVeiculo: string
   modeloVeiculo: string
   avaliacaoMedia: number
@@ -186,7 +187,12 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
       : null
 
   return (
-    <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo}>
+    <KeyboardAvoidingView
+      style={styles.tela}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+    >
+      <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo} keyboardShouldPersistTaps="handled">
       <View style={[styles.cartao, { borderLeftColor: faixa.hex }]}>
         <View style={styles.linhaTopo}>
           <View style={[styles.badge, { backgroundColor: faixa.hex }]}>
@@ -235,9 +241,10 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
           <View style={styles.motoristaCaixa}>
             <FotoMotorista corridaId={corridaId} corHex={faixa.hex} />
             <View style={styles.motoristaInfo}>
-              <Text style={styles.motoristaTexto}>{motoristaDaCorrida.modeloVeiculo}</Text>
+              <Text style={styles.motoristaTexto}>{motoristaDaCorrida.nome}</Text>
               <Text style={styles.motoristaSubtexto}>
-                {motoristaDaCorrida.placaVeiculo} · ⭐ {motoristaDaCorrida.avaliacaoMedia.toFixed(1)}
+                {motoristaDaCorrida.modeloVeiculo} · {motoristaDaCorrida.placaVeiculo} · ⭐{' '}
+                {motoristaDaCorrida.avaliacaoMedia.toFixed(1)}
               </Text>
             </View>
             {STATUS_COM_CHAT.includes(corrida.status) && (
@@ -291,7 +298,8 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
           )}
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
