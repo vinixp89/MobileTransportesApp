@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useFocusEffect } from '@react-navigation/native'
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useAuth } from '../context/AuthContext'
 import { useTema } from '../context/ThemeContext'
 import ThemeToggleButton from '../components/ThemeToggleButton'
@@ -105,7 +106,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('PedirCorrida')}
         style={({ pressed }) => [styles.card, { backgroundColor: cores.primaria }, pressed && styles.cardPressionado]}
       >
-        <Text style={styles.cardIcone}>🚗</Text>
+        <Ionicons name="car-outline" size={26} color={cores.branco} style={styles.cardIcone} />
         <Text style={styles.cardTitulo}>Pedir corrida</Text>
         <Text style={styles.cardTexto}>Informe origem e destino e veja o valor na hora.</Text>
       </Pressable>
@@ -114,7 +115,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('Pacotes')}
         style={({ pressed }) => [styles.card, { backgroundColor: cores.amarelo }, pressed && styles.cardPressionado]}
       >
-        <Text style={styles.cardIcone}>📦</Text>
+        <Ionicons name="layers-outline" size={26} color={cores.branco} style={styles.cardIcone} />
         <Text style={styles.cardTitulo}>Pacote de corrida</Text>
         <Text style={styles.cardTexto}>Compre corridas por faixa e deixe prontas pra usar quando precisar.</Text>
       </Pressable>
@@ -123,7 +124,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('Planos')}
         style={({ pressed }) => [styles.card, { backgroundColor: cores.roxo }, pressed && styles.cardPressionado]}
       >
-        <Text style={styles.cardIcone}>👑</Text>
+        <MaterialCommunityIcons name="crown-outline" size={26} color={cores.branco} style={styles.cardIcone} />
         <Text style={styles.cardTitulo}>Planos</Text>
         <Text style={styles.cardTexto}>
           {planoAtivo
@@ -136,16 +137,30 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('DoarCorrida')}
         style={({ pressed }) => [styles.card, { backgroundColor: '#ec4899' }, pressed && styles.cardPressionado]}
       >
-        <Text style={styles.cardIcone}>🎁</Text>
+        <Ionicons name="gift-outline" size={26} color={cores.branco} style={styles.cardIcone} />
         <Text style={styles.cardTitulo}>Doar corrida</Text>
         <Text style={styles.cardTexto}>Presenteie outra pessoa com uma corrida de um pacote que você já tem.</Text>
+      </Pressable>
+
+      <Pressable
+        onPress={() =>
+          Alert.alert('Em breve', 'Transportes e mudança ainda está em desenvolvimento — fique de olho nas próximas atualizações!')
+        }
+        style={({ pressed }) => [styles.card, styles.cardEmBreve, { backgroundColor: '#0ea5e9' }, pressed && styles.cardPressionado]}
+      >
+        <View style={styles.badgeEmBreve}>
+          <Text style={styles.badgeEmBreveTexto}>Em breve</Text>
+        </View>
+        <MaterialCommunityIcons name="truck-outline" size={26} color={cores.branco} style={styles.cardIcone} />
+        <Text style={styles.cardTitulo}>Transportes e mudança</Text>
+        <Text style={styles.cardTexto}>Pequenos e grandes transportes de forma rápida e segura.</Text>
       </Pressable>
 
       <Pressable
         onPress={() => navigation.navigate('Historico')}
         style={({ pressed }) => [styles.cardClaro, pressed && styles.cardPressionado]}
       >
-        <Text style={styles.cardIcone}>🕐</Text>
+        <Ionicons name="time-outline" size={22} color={cores.texto} style={styles.cardIcone} />
         <Text style={styles.cardClaroTitulo}>Histórico de corridas</Text>
         <Text style={styles.cardClaroTexto}>Veja suas corridas anteriores.</Text>
       </Pressable>
@@ -154,7 +169,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('SaldoCorrida')}
         style={({ pressed }) => [styles.cardClaro, pressed && styles.cardPressionado]}
       >
-        <Text style={styles.cardIcone}>🎫</Text>
+        <Ionicons name="ticket-outline" size={22} color={cores.texto} style={styles.cardIcone} />
         <Text style={styles.cardClaroTitulo}>Saldo de corridas</Text>
         <Text style={styles.cardClaroTexto}>Corridas de pacote disponíveis.</Text>
       </Pressable>
@@ -212,8 +227,26 @@ function criarEstilos(cores: Cores) {
     opacity: 0.85,
   },
   cardIcone: {
-    fontSize: 22,
     marginBottom: 6,
+  },
+  cardEmBreve: {
+    position: 'relative',
+  },
+  badgeEmBreve: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  badgeEmBreveTexto: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: cores.branco,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   cardTitulo: {
     fontSize: 17,
