@@ -17,6 +17,7 @@ import PacotesScreen from '../screens/PacotesScreen'
 import PlanosScreen from '../screens/PlanosScreen'
 import SaldoCorridaScreen from '../screens/SaldoCorridaScreen'
 import DoarCorridaScreen from '../screens/DoarCorridaScreen'
+import TransportesEMudancaScreen from '../screens/TransportesEMudancaScreen'
 import NotificacoesScreen from '../screens/NotificacoesScreen'
 import SobreAppScreen from '../screens/SobreAppScreen'
 import ConfiguracoesContaScreen from '../screens/ConfiguracoesContaScreen'
@@ -67,6 +68,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Planos" component={PlanosScreen} options={{ title: 'Planos' }} />
           <Stack.Screen name="SaldoCorrida" component={SaldoCorridaScreen} options={{ title: 'Saldo de corridas' }} />
           <Stack.Screen name="DoarCorrida" component={DoarCorridaScreen} options={{ title: 'Doar corrida' }} />
+          <Stack.Screen name="TransportesEMudanca" component={TransportesEMudancaScreen} options={{ title: 'Transportes e mudança' }} />
           <Stack.Screen name="Notificacoes" component={NotificacoesScreen} options={{ title: 'Caixa de entrada' }} />
           <Stack.Screen name="SobreApp" component={SobreAppScreen} options={{ title: 'Sobre o app' }} />
           <Stack.Screen name="ConfiguracoesConta" component={ConfiguracoesContaScreen} options={{ title: 'Configurações da conta' }} />

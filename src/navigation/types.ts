@@ -20,6 +20,7 @@ export type RootStackParamList = {
   Planos: undefined
   SaldoCorrida: undefined
   DoarCorrida: undefined
+  TransportesEMudanca: undefined
   Notificacoes: undefined
   SobreApp: undefined
   ConfiguracoesConta: undefined

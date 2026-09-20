@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useFocusEffect } from '@react-navigation/native'
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useAuth } from '../context/AuthContext'
 import { useTema } from '../context/ThemeContext'
@@ -143,9 +143,7 @@ export default function HomeScreen({ navigation }: Props) {
       </Pressable>
 
       <Pressable
-        onPress={() =>
-          Alert.alert('Em breve', 'Transportes e mudança ainda está em desenvolvimento — fique de olho nas próximas atualizações!')
-        }
+        onPress={() => navigation.navigate('TransportesEMudanca')}
         style={({ pressed }) => [styles.card, styles.cardEmBreve, { backgroundColor: '#0ea5e9' }, pressed && styles.cardPressionado]}
       >
         <View style={styles.badgeEmBreve}>
