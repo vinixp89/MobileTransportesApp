@@ -53,7 +53,7 @@ const VEICULOS: Veiculo[] = [
     capacidade: 'Até 3 toneladas',
     exemplo: 'Mudança completa',
     icone: 'truck-outline',
-    precos: [22.9, 36.9, 52.9, 69.9, 111.9, 153.9, 195.9],
+    precos: [100, 160, 230, 305, 490, 670, 855],
   },
   {
     id: 'caminhaoTruck',
@@ -61,7 +61,7 @@ const VEICULOS: Veiculo[] = [
     capacidade: 'Até 8 toneladas',
     exemplo: 'Grandes mudanças, empresas',
     icone: 'truck',
-    precos: [34.9, 55.9, 81.9, 107.9, 171.9, 236.9, 300.9],
+    precos: [150, 240, 350, 465, 740, 1020, 1295],
   },
 ]
 
