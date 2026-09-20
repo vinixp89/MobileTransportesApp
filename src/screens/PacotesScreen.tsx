@@ -12,6 +12,9 @@ type Tamanho = { quantidade: number; preco: number }
 type ItemCatalogo = { faixa: number; precoAvulso: number; tamanhos: Tamanho[] }
 type Assinatura = { nomePlano: string; status: number; percentualDescontoPacotes: number }
 
+// Espelha CategoriaCorrida do backend (0 = Normal, 1 = Executivo).
+const CATEGORIA = { NORMAL: 0, EXECUTIVO: 1 } as const
+
 const STATUS_ATIVA = 1
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Pacotes'>
@@ -19,6 +22,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Pacotes'>
 export default function PacotesScreen({ navigation }: Props) {
   const { cores } = useTema()
   const styles = criarEstilos(cores)
+  const [categoria, setCategoria] = useState<number>(CATEGORIA.NORMAL)
   const [catalogo, setCatalogo] = useState<ItemCatalogo[]>([])
   const [assinatura, setAssinatura] = useState<Assinatura | null>(null)
   const [carregando, setCarregando] = useState(true)
@@ -36,12 +40,17 @@ export default function PacotesScreen({ navigation }: Props) {
     assinatura?.status === STATUS_ATIVA ? assinatura.percentualDescontoPacotes : 0
 
   useEffect(() => {
+    setCarregando(true)
+    setSelecionado('')
+
     api
-      .get('/PacotesCorridas/catalogo')
+      .get('/PacotesCorridas/catalogo', { params: { categoria } })
       .then(({ data }) => setCatalogo(data))
       .catch((error) => setErro(extrairMensagemErro(error)))
       .finally(() => setCarregando(false))
+  }, [categoria])
 
+  useEffect(() => {
     api
       .get('/Planos/minha-assinatura')
       .then(({ data }) => setAssinatura(data))
@@ -54,7 +63,7 @@ export default function PacotesScreen({ navigation }: Props) {
     setErro('')
 
     try {
-      const { data } = await api.post('/PacotesCorridas/comprar-pix', { faixa: faixaValor, quantidade })
+      const { data } = await api.post('/PacotesCorridas/comprar-pix', { faixa: faixaValor, quantidade, categoria })
       setSelecionado('')
       navigation.navigate('PagamentoPix', {
         pagamentoGatewayId: data.pagamentoGatewayId,
@@ -75,7 +84,7 @@ export default function PacotesScreen({ navigation }: Props) {
     setErro('')
 
     try {
-      const { data } = await api.post('/PacotesCorridas/comprar', { faixa: faixaValor, quantidade })
+      const { data } = await api.post('/PacotesCorridas/comprar', { faixa: faixaValor, quantidade, categoria })
       setSelecionado('')
       await WebBrowser.openBrowserAsync(data.checkoutUrl)
     } catch (error) {
@@ -87,10 +96,25 @@ export default function PacotesScreen({ navigation }: Props) {
 
   return (
     <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo}>
+      <View style={styles.abas}>
+        <Pressable
+          onPress={() => setCategoria(CATEGORIA.NORMAL)}
+          style={[styles.aba, categoria === CATEGORIA.NORMAL && { backgroundColor: cores.primaria }]}
+        >
+          <Text style={[styles.abaTexto, categoria === CATEGORIA.NORMAL && styles.abaTextoAtivo]}>Normal</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setCategoria(CATEGORIA.EXECUTIVO)}
+          style={[styles.aba, categoria === CATEGORIA.EXECUTIVO && { backgroundColor: cores.primaria }]}
+        >
+          <Text style={[styles.abaTexto, categoria === CATEGORIA.EXECUTIVO && styles.abaTextoAtivo]}>Executivo</Text>
+        </Pressable>
+      </View>
+
       <Text style={styles.descricao}>
-        Cada pacote vale só pra corridas que caírem na mesma faixa de distância. O preço é o mesmo
-        da corrida avulsa multiplicado pela quantidade — a vantagem é já deixar pago e pronto pra
-        usar.
+        Cada pacote vale só pra corridas que caírem na mesma faixa de distância{categoria === CATEGORIA.EXECUTIVO ? ' e na categoria Executivo' : ''}.
+        O preço é o mesmo da corrida avulsa multiplicado pela quantidade — a vantagem é já deixar
+        pago e pronto pra usar.
       </Text>
 
       {percentualDesconto > 0 ? (
@@ -199,6 +223,27 @@ function criarEstilos(cores: Cores) {
   descricao: {
     fontSize: 13,
     color: cores.textoSecundario,
+  },
+  abas: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: cores.cartao,
+    borderRadius: 10,
+    padding: 4,
+  },
+  aba: {
+    flex: 1,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  abaTexto: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: cores.textoSecundario,
+  },
+  abaTextoAtivo: {
+    color: cores.branco,
   },
   descontoCaixa: {
     backgroundColor: cores.primariaClara,

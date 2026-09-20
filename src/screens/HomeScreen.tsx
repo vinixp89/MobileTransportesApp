@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { useFocusEffect } from '@react-navigation/native'
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useAuth } from '../context/AuthContext'
 import { useTema } from '../context/ThemeContext'
 import ThemeToggleButton from '../components/ThemeToggleButton'
 import MenuHamburguer from '../components/MenuHamburguer'
+import LogoIcon from '../components/LogoIcon'
 import api from '../api/client'
 import { obterStatusLabel, STATUS_ATIVOS } from '../constants/statusCorrida'
 import type { Cores } from '../theme/colors'
@@ -70,7 +71,7 @@ export default function HomeScreen({ navigation }: Props) {
     <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo}>
       <View style={styles.cabecalho}>
         <View style={styles.linhaLogo}>
-          <Image source={require('../../assets/icon.png')} style={styles.logo} resizeMode="contain" />
+          <LogoIcon size={40} />
           <View>
             <Text style={styles.saudacao}>Olá{perfil?.nome ? `, ${perfil.nome.split(' ')[0]}` : ''}!</Text>
             <Text style={styles.perfil}>
@@ -104,6 +105,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('PedirCorrida')}
         style={({ pressed }) => [styles.card, { backgroundColor: cores.primaria }, pressed && styles.cardPressionado]}
       >
+        <Text style={styles.cardIcone}>🚗</Text>
         <Text style={styles.cardTitulo}>Pedir corrida</Text>
         <Text style={styles.cardTexto}>Informe origem e destino e veja o valor na hora.</Text>
       </Pressable>
@@ -112,6 +114,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('Pacotes')}
         style={({ pressed }) => [styles.card, { backgroundColor: cores.amarelo }, pressed && styles.cardPressionado]}
       >
+        <Text style={styles.cardIcone}>📦</Text>
         <Text style={styles.cardTitulo}>Pacote de corrida</Text>
         <Text style={styles.cardTexto}>Compre corridas por faixa e deixe prontas pra usar quando precisar.</Text>
       </Pressable>
@@ -120,6 +123,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('Planos')}
         style={({ pressed }) => [styles.card, { backgroundColor: cores.roxo }, pressed && styles.cardPressionado]}
       >
+        <Text style={styles.cardIcone}>👑</Text>
         <Text style={styles.cardTitulo}>Planos</Text>
         <Text style={styles.cardTexto}>
           {planoAtivo
@@ -132,6 +136,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('DoarCorrida')}
         style={({ pressed }) => [styles.card, { backgroundColor: '#ec4899' }, pressed && styles.cardPressionado]}
       >
+        <Text style={styles.cardIcone}>🎁</Text>
         <Text style={styles.cardTitulo}>Doar corrida</Text>
         <Text style={styles.cardTexto}>Presenteie outra pessoa com uma corrida de um pacote que você já tem.</Text>
       </Pressable>
@@ -140,6 +145,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('Historico')}
         style={({ pressed }) => [styles.cardClaro, pressed && styles.cardPressionado]}
       >
+        <Text style={styles.cardIcone}>🕐</Text>
         <Text style={styles.cardClaroTitulo}>Histórico de corridas</Text>
         <Text style={styles.cardClaroTexto}>Veja suas corridas anteriores.</Text>
       </Pressable>
@@ -148,6 +154,7 @@ export default function HomeScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('SaldoCorrida')}
         style={({ pressed }) => [styles.cardClaro, pressed && styles.cardPressionado]}
       >
+        <Text style={styles.cardIcone}>🎫</Text>
         <Text style={styles.cardClaroTitulo}>Saldo de corridas</Text>
         <Text style={styles.cardClaroTexto}>Corridas de pacote disponíveis.</Text>
       </Pressable>
@@ -176,10 +183,6 @@ function criarEstilos(cores: Cores) {
     alignItems: 'center',
     gap: 12,
   },
-  logo: {
-    width: 40,
-    height: 40,
-  },
   saudacao: {
     fontSize: 22,
     fontWeight: '700',
@@ -207,6 +210,10 @@ function criarEstilos(cores: Cores) {
   },
   cardPressionado: {
     opacity: 0.85,
+  },
+  cardIcone: {
+    fontSize: 22,
+    marginBottom: 6,
   },
   cardTitulo: {
     fontSize: 17,

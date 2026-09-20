@@ -113,6 +113,7 @@ export default function RideConfirmCard({
               categoria === CATEGORIA.NORMAL ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
             ]}
           >
+            <Text style={styles.tileCategoriaIcone}>🚗</Text>
             <Text style={styles.tileCategoriaLabel}>Normal</Text>
             <Text style={[styles.tileCategoriaValor, { color: faixa.hex }]}>
               {gratisPlano ? 'Grátis' : formatarPreco(estimativa.valorReferenciaNormal)}
@@ -126,6 +127,7 @@ export default function RideConfirmCard({
               categoria === CATEGORIA.EXECUTIVO ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
             ]}
           >
+            <Text style={styles.tileCategoriaIcone}>🚙</Text>
             <Text style={styles.tileCategoriaLabel}>Executivo</Text>
             <Text style={[styles.tileCategoriaValor, { color: faixa.hex }]}>
               {formatarPreco(estimativa.valorReferenciaExecutivo)}
@@ -314,6 +316,10 @@ function criarEstilos(cores: Cores) {
   tileCategoriaInativo: {
     borderColor: 'transparent',
     backgroundColor: cores.fundo,
+  },
+  tileCategoriaIcone: {
+    fontSize: 20,
+    marginBottom: 2,
   },
   tileCategoriaLabel: {
     fontSize: 11,
