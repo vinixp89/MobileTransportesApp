@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import RideMap from './RideMap'
 import { obterFaixa, formatarPreco, formatarDuracao } from '../constants/faixas'
 import { useTema } from '../context/ThemeContext'
@@ -113,7 +113,7 @@ export default function RideConfirmCard({
               categoria === CATEGORIA.NORMAL ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
             ]}
           >
-            <Text style={styles.tileCategoriaIcone}>🚗</Text>
+            <Image source={require('../../assets/categorias/carro-normal.png')} style={styles.tileCategoriaIcone} />
             <Text style={styles.tileCategoriaLabel}>Normal</Text>
             <Text style={[styles.tileCategoriaValor, { color: faixa.hex }]}>
               {gratisPlano ? 'Grátis' : formatarPreco(estimativa.valorReferenciaNormal)}
@@ -127,7 +127,7 @@ export default function RideConfirmCard({
               categoria === CATEGORIA.EXECUTIVO ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
             ]}
           >
-            <Text style={styles.tileCategoriaIcone}>🚙</Text>
+            <Image source={require('../../assets/categorias/carro-executivo.png')} style={styles.tileCategoriaIcone} />
             <Text style={styles.tileCategoriaLabel}>Executivo</Text>
             <Text style={[styles.tileCategoriaValor, { color: faixa.hex }]}>
               {formatarPreco(estimativa.valorReferenciaExecutivo)}
@@ -318,8 +318,9 @@ function criarEstilos(cores: Cores) {
     backgroundColor: cores.fundo,
   },
   tileCategoriaIcone: {
-    fontSize: 20,
-    marginBottom: 2,
+    width: 72,
+    height: 36,
+    marginBottom: 4,
   },
   tileCategoriaLabel: {
     fontSize: 11,
