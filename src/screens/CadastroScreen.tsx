@@ -24,6 +24,7 @@ import type { RootStackParamList } from '../navigation/types'
 type Props = NativeStackScreenProps<RootStackParamList, 'Cadastro'>
 
 type PromocaoStatus = { limite: number; concedidas: number; vagasRestantes: number }
+type PromocaoOutubroStatus = { limite: number; concedidas: number; vagasRestantes: number; ativa: boolean }
 type FotoSlot = { uri: string; nome: string; tipo: string } | null
 type Etapa = 'dados' | 'selfie' | 'termos'
 
@@ -95,13 +96,19 @@ export default function CadastroScreen({ navigation }: Props) {
   const [enviandoExtras, setEnviandoExtras] = useState(false)
   const [erro, setErro] = useState('')
   const [promocao, setPromocao] = useState<PromocaoStatus | null>(null)
+  const [promocaoOutubro, setPromocaoOutubro] = useState<PromocaoOutubroStatus | null>(null)
 
-  // Banner da promoção de lançamento (ver PromocoesController/PromocaoLancamentoService) — endpoint
-  // público, então falha em silêncio (sem token ainda, sem conta criada) se a API não responder.
+  // Banners de promoção (ver PromocoesController/PromocaoLancamentoService) — endpoints públicos,
+  // então falham em silêncio (sem token ainda, sem conta criada) se a API não responder.
   useEffect(() => {
     api
       .get<PromocaoStatus>('/Promocoes/lancamento')
       .then(({ data }) => setPromocao(data))
+      .catch(() => {})
+
+    api
+      .get<PromocaoOutubroStatus>('/Promocoes/outubro')
+      .then(({ data }) => setPromocaoOutubro(data))
       .catch(() => {})
   }, [])
 
@@ -236,6 +243,16 @@ export default function CadastroScreen({ navigation }: Props) {
                 <Text style={styles.promoTexto}>
                   Restam {promocao.vagasRestantes} de {promocao.limite} vagas! Cadastre-se agora e ganhe 1 corrida
                   grátis (faixa Amarela).
+                </Text>
+              </View>
+            ) : null}
+
+            {promocaoOutubro?.ativa ? (
+              <View style={[styles.promoCaixa, styles.promoCaixaAzul]}>
+                <Text style={[styles.promoTitulo, styles.promoTituloAzul]}>🎁 Promoção de outubro</Text>
+                <Text style={[styles.promoTexto, styles.promoTextoAzul]}>
+                  Restam {promocaoOutubro.vagasRestantes} de {promocaoOutubro.limite} vagas! Cadastre-se agora e
+                  ganhe 1 corrida grátis (faixa Azul).
                 </Text>
               </View>
             ) : null}
@@ -455,6 +472,15 @@ function criarEstilos(cores: Cores) {
       fontSize: 13,
       color: '#1f2430',
       lineHeight: 18,
+    },
+    promoCaixaAzul: {
+      backgroundColor: '#dbeafe',
+    },
+    promoTituloAzul: {
+      color: '#1e3a8a',
+    },
+    promoTextoAzul: {
+      color: '#1d4ed8',
     },
     campo: {
       marginBottom: 16,
