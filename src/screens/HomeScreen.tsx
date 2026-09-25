@@ -8,6 +8,7 @@ import { useTema } from '../context/ThemeContext'
 import ThemeToggleButton from '../components/ThemeToggleButton'
 import MenuHamburguer from '../components/MenuHamburguer'
 import LogoIcon from '../components/LogoIcon'
+import AvisoModal from '../components/AvisoModal'
 import api from '../api/client'
 import { obterStatusLabel, STATUS_ATIVOS } from '../constants/statusCorrida'
 import type { Cores } from '../theme/colors'
@@ -20,6 +21,7 @@ const INTERVALO_MS = 15000
 const STATUS_ASSINATURA_ATIVA = 1
 
 type AssinaturaResumo = { nomePlano: string; status: number }
+type PromocaoOutubro = { limite: number; concedidas: number; vagasRestantes: number; ativa: boolean }
 
 // Espelha os cards de ação da HomePage do front-end web (Cliente): Pedir corrida, Pacote de
 // corrida e Planos, no mesmo verde de marca. Também mostra um banner de "corrida em andamento"
@@ -31,6 +33,7 @@ export default function HomeScreen({ navigation }: Props) {
   const styles = criarEstilos(cores)
   const [corridaAtual, setCorridaAtual] = useState<Corrida | null>(null)
   const [assinatura, setAssinatura] = useState<AssinaturaResumo | null>(null)
+  const [promocaoOutubro, setPromocaoOutubro] = useState<PromocaoOutubro | null>(null)
 
   useFocusEffect(
     useCallback(() => {
@@ -59,6 +62,15 @@ export default function HomeScreen({ navigation }: Props) {
         })
         .catch(() => {})
 
+      // Promoção "1 corrida Azul grátis" de 01/10 (ver PromocaoLancamentoService no backend) — só
+      // busca 1x ao focar, o servidor já resolve sozinho se está no período e se ainda tem vaga.
+      api
+        .get<PromocaoOutubro>('/Promocoes/outubro')
+        .then(({ data }) => {
+          if (ativo) setPromocaoOutubro(data)
+        })
+        .catch(() => {})
+
       return () => {
         ativo = false
         clearInterval(intervalo)
@@ -70,6 +82,8 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo}>
+      <AvisoModal navigation={navigation} />
+
       <View style={styles.cabecalho}>
         <View style={styles.linhaLogo}>
           <LogoIcon size={40} />
@@ -97,6 +111,21 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.bannerTitulo}>Corrida em andamento</Text>
             <Text style={styles.bannerTexto}>
               {obterStatusLabel(corridaAtual.status).texto} — toque pra acompanhar
+            </Text>
+          </View>
+        </Pressable>
+      )}
+
+      {promocaoOutubro?.ativa && (
+        <Pressable
+          onPress={() => navigation.navigate('SaldoCorrida')}
+          style={({ pressed }) => [styles.bannerPromo, pressed && styles.cardPressionado]}
+        >
+          <Ionicons name="gift-outline" size={22} color="#1d4ed8" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.bannerPromoTitulo}>Ganhe 1 corrida grátis!</Text>
+            <Text style={styles.bannerPromoTexto}>
+              Corrida da faixa Azul, de graça pros próximos cadastros — restam {promocaoOutubro.vagasRestantes} vagas.
             </Text>
           </View>
         </Pressable>
@@ -300,6 +329,28 @@ function criarEstilos(cores: Cores) {
   bannerTexto: {
     fontSize: 12,
     color: '#7e22ce',
+    marginTop: 2,
+  },
+  bannerPromo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+  },
+  bannerPromoTitulo: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1e3a8a',
+  },
+  bannerPromoTexto: {
+    fontSize: 12,
+    color: '#1d4ed8',
     marginTop: 2,
   },
   })
