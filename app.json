@@ -19,6 +19,7 @@
     "android": {
       "package": "com.vainaboa.cliente",
       "versionCode": 20,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#16a34a",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -51,6 +52,12 @@
         {
           "cameraPermission": "Usamos a câmera pra tirar a selfie exigida no cadastro.",
           "photosPermission": "Usamos sua galeria pra escolher a selfie exigida no cadastro."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#16a34a"
         }
       ]
     ],

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { jwtDecode } from 'jwt-decode'
 import api, { extrairMensagemErro } from '../api/client'
 import { apagarToken, lerToken, salvarToken } from '../api/tokenStorage'
+import { registrarPushTokenAsync } from '../notifications/config'
 
 type Usuario = {
   id: string
@@ -109,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return
         }
         setUsuario(decodificarUsuario(token))
+        registrarPushTokenAsync()
         return carregarPerfil()
       })
       .catch(() => apagarToken())
@@ -123,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await salvarToken(data.token)
       setUsuario(decodificarUsuario(data.token))
+      registrarPushTokenAsync()
       await carregarPerfil()
 
       return { sucesso: true }
@@ -141,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await salvarToken(data.token)
       setUsuario(decodificarUsuario(data.token))
+      registrarPushTokenAsync()
       await carregarPerfil()
 
       return { sucesso: true }
@@ -174,6 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       await salvarToken(data.token)
       setUsuario(decodificarUsuario(data.token))
+      registrarPushTokenAsync()
       await carregarPerfil()
 
       return { sucesso: true }
