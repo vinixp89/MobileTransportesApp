@@ -189,7 +189,10 @@ export default function AcompanharCorridaScreen({ route, navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.tela}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      // No Android, "height" costuma brigar com o adjustResize que o próprio SO já aplica (padrão
+      // do Expo) — resultado: o campo de comentário da avaliação fica fora da área visível e nem o
+      // scroll alcança. Deixando undefined no Android, quem resolve é só o SO mesmo.
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
     >
       <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo} keyboardShouldPersistTaps="handled">
