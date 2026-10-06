@@ -18,7 +18,6 @@
     },
     "android": {
       "package": "com.vainaboa.cliente",
-      "versionCode": 20,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#16a34a",
