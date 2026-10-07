@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTema } from '../context/ThemeContext'
 import type { Cores } from '../theme/colors'
 import type { RootStackParamList } from '../navigation/types'
+import { registrarPushTokenAsync, ultimoResultadoPush, type ResultadoPush } from '../notifications/config'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ConfiguracoesConta'>
 
@@ -22,6 +23,15 @@ export default function ConfiguracoesContaScreen({ navigation }: Props) {
   const [trocandoSenha, setTrocandoSenha] = useState(false)
   const [erroSenha, setErroSenha] = useState('')
   const [sucessoSenha, setSucessoSenha] = useState(false)
+
+  const [statusPush, setStatusPush] = useState<ResultadoPush>(ultimoResultadoPush())
+  const [registrandoPush, setRegistrandoPush] = useState(false)
+
+  async function handleRegistrarPush() {
+    setRegistrandoPush(true)
+    setStatusPush(await registrarPushTokenAsync())
+    setRegistrandoPush(false)
+  }
 
   async function handleTrocarSenha() {
     setErroSenha('')
@@ -85,6 +95,22 @@ export default function ConfiguracoesContaScreen({ navigation }: Props) {
         </View>
         <Text style={styles.seta}>›</Text>
       </Pressable>
+
+      <View style={styles.cartao}>
+        <Text style={styles.secaoTitulo}>Notificações push</Text>
+        <Text style={statusPush.ok ? styles.sucessoTexto : styles.erroTexto}>{statusPush.motivo}</Text>
+        <Pressable
+          onPress={handleRegistrarPush}
+          disabled={registrandoPush}
+          style={[styles.botaoTrocarSenha, { backgroundColor: cores.primaria }, registrandoPush && styles.desabilitado]}
+        >
+          {registrandoPush ? (
+            <ActivityIndicator color={cores.branco} />
+          ) : (
+            <Text style={styles.botaoTrocarSenhaTexto}>Tentar registrar de novo</Text>
+          )}
+        </Pressable>
+      </View>
 
       <View style={styles.cartao}>
         <Text style={styles.secaoTitulo}>Trocar senha</Text>
