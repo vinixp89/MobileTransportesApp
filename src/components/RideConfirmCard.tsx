@@ -16,6 +16,9 @@ type EnderecoResolvido = {
 
 export const CATEGORIA = { NORMAL: 0, EXECUTIVO: 1 } as const
 
+// Espelha TipoVeiculo do backend (0 = carro, 1 = moto). Moto é sempre categoria Normal.
+export const TIPO_VEICULO = { CARRO: 0, MOTO: 1 } as const
+
 export type Estimativa = {
   origem: EnderecoResolvido
   destino: EnderecoResolvido
@@ -24,6 +27,8 @@ export type Estimativa = {
   faixa: number
   valorReferenciaNormal: number
   valorReferenciaExecutivo: number
+  // null/ausente quando a viagem passa de 40km (moto não atende) ou o backend é antigo.
+  valorReferenciaMoto?: number | null
   avisosEndereco?: string[] | null
 }
 
@@ -32,6 +37,8 @@ type Props = {
   modo: 'confirmando' | 'confirmado'
   categoria?: number
   onCategoriaChange?: (categoria: number) => void
+  tipoVeiculo?: number
+  onTipoVeiculoChange?: (tipoVeiculo: number) => void
   onConfirmar: () => void
   onCancelar: () => void
   confirmando: boolean
@@ -53,6 +60,8 @@ export default function RideConfirmCard({
   modo,
   categoria = CATEGORIA.NORMAL,
   onCategoriaChange,
+  tipoVeiculo = TIPO_VEICULO.CARRO,
+  onTipoVeiculoChange,
   onConfirmar,
   onCancelar,
   confirmando,
@@ -67,7 +76,18 @@ export default function RideConfirmCard({
   const styles = criarEstilos(cores)
   const faixa = obterFaixa(estimativa.faixa)
   const duracao = formatarDuracao(estimativa.duracaoEstimadaMinutos)
-  const valorEscolhido = categoria === CATEGORIA.EXECUTIVO ? estimativa.valorReferenciaExecutivo : estimativa.valorReferenciaNormal
+  const motoDisponivel = estimativa.valorReferenciaMoto != null
+  const ehMoto = tipoVeiculo === TIPO_VEICULO.MOTO
+  const valorEscolhido = ehMoto
+    ? estimativa.valorReferenciaMoto ?? estimativa.valorReferenciaNormal
+    : categoria === CATEGORIA.EXECUTIVO
+      ? estimativa.valorReferenciaExecutivo
+      : estimativa.valorReferenciaNormal
+
+  function escolher(novaCategoria: number, novoTipo: number) {
+    onCategoriaChange?.(novaCategoria)
+    onTipoVeiculoChange?.(novoTipo)
+  }
 
   return (
     <View style={[styles.card, { borderLeftColor: faixa.hex }]}>
@@ -107,10 +127,10 @@ export default function RideConfirmCard({
       {modo === 'confirmando' && onCategoriaChange ? (
         <View style={styles.opcoesCategoria}>
           <Pressable
-            onPress={() => onCategoriaChange(CATEGORIA.NORMAL)}
+            onPress={() => escolher(CATEGORIA.NORMAL, TIPO_VEICULO.CARRO)}
             style={[
               styles.tileCategoria,
-              categoria === CATEGORIA.NORMAL ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
+              !ehMoto && categoria === CATEGORIA.NORMAL ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
             ]}
           >
             <Image source={require('../../assets/categorias/carro-normal.png')} style={styles.tileCategoriaIcone} />
@@ -121,16 +141,32 @@ export default function RideConfirmCard({
           </Pressable>
 
           <Pressable
-            onPress={() => onCategoriaChange(CATEGORIA.EXECUTIVO)}
+            onPress={() => escolher(CATEGORIA.EXECUTIVO, TIPO_VEICULO.CARRO)}
             style={[
               styles.tileCategoria,
-              categoria === CATEGORIA.EXECUTIVO ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
+              !ehMoto && categoria === CATEGORIA.EXECUTIVO ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
             ]}
           >
             <Image source={require('../../assets/categorias/carro-executivo.png')} style={styles.tileCategoriaIcone} />
             <Text style={styles.tileCategoriaLabel}>Executivo</Text>
             <Text style={[styles.tileCategoriaValor, { color: faixa.hex }]}>
               {formatarPreco(estimativa.valorReferenciaExecutivo)}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => escolher(CATEGORIA.NORMAL, TIPO_VEICULO.MOTO)}
+            disabled={!motoDisponivel}
+            style={[
+              styles.tileCategoria,
+              ehMoto ? { borderColor: faixa.hex } : styles.tileCategoriaInativo,
+              !motoDisponivel && styles.desabilitado,
+            ]}
+          >
+            <Text style={styles.tileMotoIcone}>🏍️</Text>
+            <Text style={styles.tileCategoriaLabel}>Moto</Text>
+            <Text style={[styles.tileCategoriaValor, { color: faixa.hex }]}>
+              {motoDisponivel ? formatarPreco(estimativa.valorReferenciaMoto as number) : 'Até 40 km'}
             </Text>
           </Pressable>
         </View>
@@ -140,7 +176,13 @@ export default function RideConfirmCard({
         </View>
       )}
 
-      {modo === 'confirmando' && categoria === CATEGORIA.EXECUTIVO && (
+      {modo === 'confirmando' && ehMoto && (
+        <Text style={[styles.subtexto, { paddingHorizontal: 20, marginTop: 8 }]}>
+          Corrida de moto — 1 passageiro, capacete obrigatório. Só um motorista de moto atende esse pedido.
+        </Text>
+      )}
+
+      {modo === 'confirmando' && !ehMoto && categoria === CATEGORIA.EXECUTIVO && (
         <Text style={[styles.subtexto, { paddingHorizontal: 20, marginTop: 8 }]}>
           Veículo até 3 anos, sedan médio ou SUV — só disponível como corrida avulsa.
         </Text>
@@ -319,6 +361,11 @@ function criarEstilos(cores: Cores) {
   },
   tileCategoriaIcone: {
     width: 72,
+    height: 36,
+    marginBottom: 4,
+  },
+  tileMotoIcone: {
+    fontSize: 28,
     height: 36,
     marginBottom: 4,
   },

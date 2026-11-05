@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import api, { extrairMensagemErro } from '../api/client'
 import EnderecoFields, { enderecoVazio, type Endereco } from '../components/EnderecoFields'
-import RideConfirmCard, { CATEGORIA, type Estimativa } from '../components/RideConfirmCard'
+import RideConfirmCard, { CATEGORIA, TIPO_VEICULO, type Estimativa } from '../components/RideConfirmCard'
 import { obterFaixa } from '../constants/faixas'
 import { useOrigemAutomatica } from '../hooks/useOrigemAutomatica'
 import { useTema } from '../context/ThemeContext'
@@ -20,7 +20,7 @@ import type { RootStackParamList } from '../navigation/types'
 
 const TIPO_CONSUMO = { AVULSA: 0, PACOTE: 1, BENEFICIO: 2 } as const
 
-type Pacote = { id: string; faixa: number; quantidadeRestante: number }
+type Pacote = { id: string; faixa: number; quantidadeRestante: number; tipoVeiculo?: number }
 type Beneficio = {
   temBeneficio: boolean
   corBeneficio: number
@@ -54,6 +54,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
   }, [origemAutomatica])
   const [tipoConsumo, setTipoConsumo] = useState<number>(TIPO_CONSUMO.AVULSA)
   const [categoria, setCategoria] = useState<number>(CATEGORIA.NORMAL)
+  const [tipoVeiculo, setTipoVeiculo] = useState<number>(TIPO_VEICULO.CARRO)
   const [pacotes, setPacotes] = useState<Pacote[]>([])
   const [pacoteCorridasId, setPacoteCorridasId] = useState('')
   const [beneficio, setBeneficio] = useState<Beneficio | null>(null)
@@ -103,6 +104,18 @@ export default function PedirCorridaScreen({ navigation }: Props) {
       ? `Sua corrida grátis vale só pra faixa ${corBeneficio.nome}, mas essa corrida caiu na faixa ${obterFaixa(estimativa.faixa).nome}. Volte e escolha outra forma de pagamento.`
       : ''
 
+  // Moto não tem corrida grátis do plano, e pacote de carro não vale pra moto (nem o contrário) —
+  // mesmas regras que o backend aplica em CorridaService.CriarAsync, avisadas aqui antes do clique.
+  const erroBeneficioMoto =
+    tipoVeiculo === TIPO_VEICULO.MOTO && tipoConsumo === TIPO_CONSUMO.BENEFICIO
+      ? 'A corrida grátis do plano não vale pra moto. Volte e escolha outra forma de pagamento, ou escolha carro.'
+      : ''
+
+  const erroTipoPacote =
+    tipoConsumo === TIPO_CONSUMO.PACOTE && pacoteSelecionado && (pacoteSelecionado.tipoVeiculo ?? TIPO_VEICULO.CARRO) !== tipoVeiculo
+      ? `Esse pacote é de ${(pacoteSelecionado.tipoVeiculo ?? TIPO_VEICULO.CARRO) === TIPO_VEICULO.MOTO ? 'moto' : 'carro'}, mas você escolheu ${tipoVeiculo === TIPO_VEICULO.MOTO ? 'moto' : 'carro'}. Troque o tipo de veículo ou pague avulso.`
+      : ''
+
   const origemResolvida = Boolean(origem.logradouro)
   const destinoResolvido = Boolean(destino.logradouro)
 
@@ -125,6 +138,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
       const { data } = await api.post('/Corridas/estimar', { origem, destino })
       setEstimativa(data)
       setCategoria(CATEGORIA.NORMAL)
+      setTipoVeiculo(TIPO_VEICULO.CARRO)
       setEtapa('confirmando')
     } catch (error) {
       console.error('[DEBUG estimar]', error)
@@ -143,7 +157,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
       // Pago pelo valor exato dela, e só cria/libera a corrida de verdade quando o pagamento for
       // confirmado do outro lado (ver PagamentoService no backend).
       if (tipoConsumo === TIPO_CONSUMO.AVULSA) {
-        const { data } = await api.post('/Corridas/avulsa', { origem, destino, tipoConsumo, pacoteCorridasId: null, categoria })
+        const { data } = await api.post('/Corridas/avulsa', { origem, destino, tipoConsumo, pacoteCorridasId: null, categoria, tipoVeiculo })
         await WebBrowser.openBrowserAsync(data.checkoutUrl)
         navigation.replace('AcompanharCorrida', { corridaId: data.corridaId })
         return
@@ -155,6 +169,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
         tipoConsumo,
         pacoteCorridasId: tipoConsumo === TIPO_CONSUMO.PACOTE ? pacoteCorridasId : null,
         categoria,
+        tipoVeiculo,
       })
 
       // Daqui pra frente quem cuida do status da corrida (motorista aceitar, se deslocar até o
@@ -171,7 +186,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
     setConfirmandoPix(true)
 
     try {
-      const { data } = await api.post('/Corridas/avulsa-pix', { origem, destino, tipoConsumo, pacoteCorridasId: null, categoria })
+      const { data } = await api.post('/Corridas/avulsa-pix', { origem, destino, tipoConsumo, pacoteCorridasId: null, categoria, tipoVeiculo })
       navigation.replace('PagamentoPix', {
         pagamentoGatewayId: data.pagamentoGatewayId,
         qrCodeCopiaCola: data.qrCodeCopiaCola,
@@ -231,7 +246,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
                     return (
                       <OpcaoPagamento
                         key={p.id}
-                        label={`${faixa.nome} — ${p.quantidadeRestante} corrida(s) restante(s)`}
+                        label={`${p.tipoVeiculo === TIPO_VEICULO.MOTO ? '🏍️ Moto · ' : ''}${faixa.nome} — ${p.quantidadeRestante} corrida(s) restante(s)`}
                         selecionado={pacoteCorridasId === p.id}
                         onPress={() => setPacoteCorridasId(p.id)}
                       />
@@ -242,8 +257,8 @@ export default function PedirCorridaScreen({ navigation }: Props) {
             )}
 
             <Text style={styles.dica}>
-              A categoria Executivo (veículo até 3 anos, sedan médio ou SUV) só vale pra corrida avulsa —
-              você escolhe a categoria na próxima tela, depois de ver os dois preços.
+              Na próxima tela você escolhe Normal, Executivo (veículo até 3 anos, sedan médio ou SUV, só avulsa)
+              ou Moto (até 40 km, sem corrida grátis do plano), depois de ver os preços.
             </Text>
           </View>
 
@@ -269,12 +284,14 @@ export default function PedirCorridaScreen({ navigation }: Props) {
           modo={etapa}
           categoria={categoria}
           onCategoriaChange={setCategoria}
+          tipoVeiculo={tipoVeiculo}
+          onTipoVeiculoChange={setTipoVeiculo}
           onConfirmar={handleConfirmar}
           onCancelar={() => setEtapa('form')}
           confirmando={confirmando}
-          erro={erro || erroFaixaPacote || erroFaixaBeneficio}
-          bloqueado={Boolean(erroFaixaPacote || erroFaixaBeneficio)}
-          gratisPlano={tipoConsumo === TIPO_CONSUMO.BENEFICIO && categoria === CATEGORIA.NORMAL}
+          erro={erro || erroFaixaPacote || erroFaixaBeneficio || erroBeneficioMoto || erroTipoPacote}
+          bloqueado={Boolean(erroFaixaPacote || erroFaixaBeneficio || erroBeneficioMoto || erroTipoPacote)}
+          gratisPlano={tipoConsumo === TIPO_CONSUMO.BENEFICIO && categoria === CATEGORIA.NORMAL && tipoVeiculo === TIPO_VEICULO.CARRO}
           avulsa={tipoConsumo === TIPO_CONSUMO.AVULSA}
           onConfirmarPix={handleConfirmarPix}
           confirmandoPix={confirmandoPix}

@@ -3,6 +3,7 @@ import { ActivityIndicator, View } from 'react-native'
 import { useAuth } from '../context/AuthContext'
 import { useTema } from '../context/ThemeContext'
 import ThemeToggleButton from '../components/ThemeToggleButton'
+import AvisoNovaVersao from '../components/AvisoNovaVersao'
 import LoginScreen from '../screens/LoginScreen'
 import CadastroScreen from '../screens/CadastroScreen'
 import EsqueciSenhaScreen from '../screens/EsqueciSenhaScreen'
@@ -46,6 +47,7 @@ export default function RootNavigator() {
   const precisaConfirmarSms = Boolean(usuario) && perfil !== null && !perfil.telefoneVerificado
 
   return (
+    <>
     <Stack.Navigator
       screenOptions={{
         headerTintColor: cores.primaria,
@@ -84,5 +86,7 @@ export default function RootNavigator() {
         </>
       )}
     </Stack.Navigator>
+    <AvisoNovaVersao />
+    </>
   )
 }

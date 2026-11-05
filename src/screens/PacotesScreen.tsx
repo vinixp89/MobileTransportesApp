@@ -23,6 +23,9 @@ export default function PacotesScreen({ navigation }: Props) {
   const { cores } = useTema()
   const styles = criarEstilos(cores)
   const [categoria, setCategoria] = useState<number>(CATEGORIA.NORMAL)
+  // Moto é sempre categoria Normal (Executivo é só de carro) e tem catálogo próprio, até 40 km.
+  const [moto, setMoto] = useState(false)
+  const tipoVeiculo = moto ? 1 : 0
   const [catalogo, setCatalogo] = useState<ItemCatalogo[]>([])
   const [assinatura, setAssinatura] = useState<Assinatura | null>(null)
   const [carregando, setCarregando] = useState(true)
@@ -44,11 +47,11 @@ export default function PacotesScreen({ navigation }: Props) {
     setSelecionado('')
 
     api
-      .get('/PacotesCorridas/catalogo', { params: { categoria } })
+      .get('/PacotesCorridas/catalogo', { params: { categoria, tipoVeiculo } })
       .then(({ data }) => setCatalogo(data))
       .catch((error) => setErro(extrairMensagemErro(error)))
       .finally(() => setCarregando(false))
-  }, [categoria])
+  }, [categoria, tipoVeiculo])
 
   useEffect(() => {
     api
@@ -63,7 +66,7 @@ export default function PacotesScreen({ navigation }: Props) {
     setErro('')
 
     try {
-      const { data } = await api.post('/PacotesCorridas/comprar-pix', { faixa: faixaValor, quantidade, categoria })
+      const { data } = await api.post('/PacotesCorridas/comprar-pix', { faixa: faixaValor, quantidade, categoria, tipoVeiculo })
       setSelecionado('')
       navigation.navigate('PagamentoPix', {
         pagamentoGatewayId: data.pagamentoGatewayId,
@@ -84,7 +87,7 @@ export default function PacotesScreen({ navigation }: Props) {
     setErro('')
 
     try {
-      const { data } = await api.post('/PacotesCorridas/comprar', { faixa: faixaValor, quantidade, categoria })
+      const { data } = await api.post('/PacotesCorridas/comprar', { faixa: faixaValor, quantidade, categoria, tipoVeiculo })
       setSelecionado('')
       await WebBrowser.openBrowserAsync(data.checkoutUrl)
     } catch (error) {
@@ -98,21 +101,27 @@ export default function PacotesScreen({ navigation }: Props) {
     <ScrollView style={styles.tela} contentContainerStyle={styles.conteudo}>
       <View style={styles.abas}>
         <Pressable
-          onPress={() => setCategoria(CATEGORIA.NORMAL)}
-          style={[styles.aba, categoria === CATEGORIA.NORMAL && { backgroundColor: cores.primaria }]}
+          onPress={() => { setCategoria(CATEGORIA.NORMAL); setMoto(false) }}
+          style={[styles.aba, !moto && categoria === CATEGORIA.NORMAL && { backgroundColor: cores.primaria }]}
         >
-          <Text style={[styles.abaTexto, categoria === CATEGORIA.NORMAL && styles.abaTextoAtivo]}>Normal</Text>
+          <Text style={[styles.abaTexto, !moto && categoria === CATEGORIA.NORMAL && styles.abaTextoAtivo]}>Normal</Text>
         </Pressable>
         <Pressable
-          onPress={() => setCategoria(CATEGORIA.EXECUTIVO)}
-          style={[styles.aba, categoria === CATEGORIA.EXECUTIVO && { backgroundColor: cores.primaria }]}
+          onPress={() => { setCategoria(CATEGORIA.EXECUTIVO); setMoto(false) }}
+          style={[styles.aba, !moto && categoria === CATEGORIA.EXECUTIVO && { backgroundColor: cores.primaria }]}
         >
-          <Text style={[styles.abaTexto, categoria === CATEGORIA.EXECUTIVO && styles.abaTextoAtivo]}>Executivo</Text>
+          <Text style={[styles.abaTexto, !moto && categoria === CATEGORIA.EXECUTIVO && styles.abaTextoAtivo]}>Executivo</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => { setCategoria(CATEGORIA.NORMAL); setMoto(true) }}
+          style={[styles.aba, moto && { backgroundColor: cores.primaria }]}
+        >
+          <Text style={[styles.abaTexto, moto && styles.abaTextoAtivo]}>🏍️ Moto</Text>
         </Pressable>
       </View>
 
       <Text style={styles.descricao}>
-        Cada pacote vale só pra corridas que caírem na mesma faixa de distância{categoria === CATEGORIA.EXECUTIVO ? ' e na categoria Executivo' : ''}.
+        Cada pacote vale só pra corridas que caírem na mesma faixa de distância{moto ? ', só pra corridas de moto (até 40 km)' : categoria === CATEGORIA.EXECUTIVO ? ' e na categoria Executivo' : ''}.
         O preço é o mesmo da corrida avulsa multiplicado pela quantidade — a vantagem é já deixar
         pago e pronto pra usar.
       </Text>
