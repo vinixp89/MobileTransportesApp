@@ -178,7 +178,7 @@ export default function RideConfirmCard({
 
       {modo === 'confirmando' && ehMoto && (
         <Text style={[styles.subtexto, { paddingHorizontal: 20, marginTop: 8 }]}>
-          Corrida de moto — 1 passageiro, capacete obrigatório. Só um motorista de moto atende esse pedido.
+          Corrida de moto: só 1 passageiro, com 18 anos ou mais, e o capacete é obrigatório. Só um motorista de moto atende esse pedido.
         </Text>
       )}
 
