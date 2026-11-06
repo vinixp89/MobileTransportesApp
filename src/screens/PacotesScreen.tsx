@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 import * as WebBrowser from 'expo-web-browser'
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 import api, { extrairMensagemErro } from '../api/client'
 import { obterFaixa, formatarPreco } from '../constants/faixas'
 import { useTema } from '../context/ThemeContext'
@@ -116,7 +117,10 @@ export default function PacotesScreen({ navigation }: Props) {
           onPress={() => { setCategoria(CATEGORIA.NORMAL); setMoto(true) }}
           style={[styles.aba, moto && { backgroundColor: cores.primaria }]}
         >
-          <Text style={[styles.abaTexto, moto && styles.abaTextoAtivo]}>🏍️ Moto</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <MaterialCommunityIcons name="motorbike" size={18} color={moto ? cores.branco : cores.textoSecundario} />
+            <Text style={[styles.abaTexto, moto && styles.abaTextoAtivo]}>Moto</Text>
+          </View>
         </Pressable>
       </View>
 

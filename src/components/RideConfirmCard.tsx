@@ -163,7 +163,7 @@ export default function RideConfirmCard({
               !motoDisponivel && styles.desabilitado,
             ]}
           >
-            <Text style={styles.tileMotoIcone}>🏍️</Text>
+            <Image source={require('../../assets/categorias/moto-normal.png')} style={styles.tileCategoriaIcone} />
             <Text style={styles.tileCategoriaLabel}>Moto</Text>
             <Text style={[styles.tileCategoriaValor, { color: faixa.hex }]}>
               {motoDisponivel ? formatarPreco(estimativa.valorReferenciaMoto as number) : 'Até 40 km'}
@@ -361,11 +361,6 @@ function criarEstilos(cores: Cores) {
   },
   tileCategoriaIcone: {
     width: 72,
-    height: 36,
-    marginBottom: 4,
-  },
-  tileMotoIcone: {
-    fontSize: 28,
     height: 36,
     marginBottom: 4,
   },

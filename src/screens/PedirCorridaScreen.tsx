@@ -246,7 +246,7 @@ export default function PedirCorridaScreen({ navigation }: Props) {
                     return (
                       <OpcaoPagamento
                         key={p.id}
-                        label={`${p.tipoVeiculo === TIPO_VEICULO.MOTO ? '🏍️ Moto · ' : ''}${faixa.nome} — ${p.quantidadeRestante} corrida(s) restante(s)`}
+                        label={`${p.tipoVeiculo === TIPO_VEICULO.MOTO ? 'Moto · ' : ''}${faixa.nome} — ${p.quantidadeRestante} corrida(s) restante(s)`}
                         selecionado={pacoteCorridasId === p.id}
                         onPress={() => setPacoteCorridasId(p.id)}
                       />
